@@ -67,23 +67,6 @@ const Profile = () => {
       </CardHeader>
       
       <CardContent className="space-y-4">
-<<<<<<< HEAD
-        <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200">
-          <div className="space-y-1">
-            <p><strong className="text-gray-900">User ID:</strong> <span className="font-mono text-xs">{user.id}</span></p>
-            <p><strong className="text-gray-900">Member since:</strong> {formatDate(user.createdAt)}</p>
-          </div>
-        </div>
-        
-        <Button 
-          onClick={logout}
-          variant="outline" 
-          className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign Out
-        </Button>
-=======
         <div className="text-sm text-muted-foreground">
           <p><strong>Member since:</strong> {formatDate(user.createdAt)}</p>
         </div>
@@ -129,7 +112,6 @@ const Profile = () => {
             </AlertDialogContent>
           </AlertDialog>
         </div>
->>>>>>> d37edc4de67309d2f6bacd36b80a7c526deca527
       </CardContent>
     </Card>
   );

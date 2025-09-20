@@ -287,7 +287,6 @@ const INITIAL_ELEMENTS_CONFIG = [
   { id: "air", emoji: "💨" },
   { id: "axe", emoji: "🪓" },
   { id: "pickaxe", emoji: "⛏️" },
-  { id: "stemcell", emoji: "🔬" },
   { id: "tree", emoji: "🌳" },
   { id: "stone", emoji: "🪨" }
 ];

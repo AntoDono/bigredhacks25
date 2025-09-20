@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 interface UseSocketReturn {
   connected: boolean;
-  joinRoom: (roomId: string, roomName?: string, roomDescription?: string) => void;
+  joinRoom: (roomId: string, roomName?: string, roomDescription?: string, language?: string) => void;
   leaveRoom: () => void;
   createElement: (element1: string, element2: string) => void;
   startGame: () => void;

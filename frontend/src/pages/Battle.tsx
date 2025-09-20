@@ -13,8 +13,10 @@ import StoryModal from "@/components/battle/StoryModal";
 import RoomLobby from "@/components/battle/RoomLobby";
 import GameOverlay from "@/components/notifications/GameOverlay";
 import ElementNotification from "@/components/notifications/ElementNotification";
+import SpeechRecognitionModal from "@/components/battle/SpeechRecognitionModal";
 import { playBase64Audio } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/api";
+import { GAME_CONFIG } from "@/lib/gameConfig";
 
 // Default basic elements for the battle (fallback)
 const DEFAULT_INITIAL_ELEMENTS = [
@@ -49,7 +51,7 @@ const Battle = () => {
     offGameEvent
   } = useSocket();
   
-  const [timeLeft, setTimeLeft] = useState(120); // 2 minutes
+  const [timeLeft, setTimeLeft] = useState<number>(GAME_CONFIG.BATTLE_DURATION);
   const [isActive, setIsActive] = useState(false); // Wait for game to start
   const [availableElements, setAvailableElements] = useState(DEFAULT_INITIAL_ELEMENTS);
   const [canvasElements, setCanvasElements] = useState<Array<any>>([]);
@@ -65,6 +67,15 @@ const Battle = () => {
   const [gameOverlayData, setGameOverlayData] = useState<any>(null);
   const [elementNotifications, setElementNotifications] = useState<any[]>([]);
   const [elementAudio, setElementAudio] = useState<Map<string, string>>(new Map());
+  
+  // Speech recognition state
+  const [showSpeechModal, setShowSpeechModal] = useState(false);
+  const [speechModalData, setSpeechModalData] = useState<{
+    elementName: string;
+    elementEmoji: string;
+    groundTruthAudio: string;
+    pendingElementData: any;
+  } | null>(null);
 
   // Check authentication
   useEffect(() => {
@@ -77,7 +88,9 @@ const Battle = () => {
   useEffect(() => {
     if (connected && roomCode && !roomJoined) {
       const language = location.state?.language || 'en-US';
-      joinRoom(roomCode, `Battle Room ${roomCode}`, `Real-time battle room`, language);
+      const roomName = `Battle Room ${roomCode}`;
+      const roomDescription = `Real-time battle room`;
+      joinRoom(roomCode, roomName, roomDescription, language);
       setRoomJoined(true);
       
       // Fetch language-specific initial elements
@@ -99,11 +112,11 @@ const Battle = () => {
       setShowLobby(currentRoom.gameStatus === 'waiting');
       
       if (currentRoom.gameStatus === 'active' && currentRoom.startedAt) {
-        // Calculate time left based on start time (2 minute game)
+        // Calculate time left based on start time
         const startTime = new Date(currentRoom.startedAt).getTime();
         const now = Date.now();
         const elapsed = Math.floor((now - startTime) / 1000);
-        const remaining = Math.max(0, 120 - elapsed);
+        const remaining = Math.max(0, GAME_CONFIG.BATTLE_DURATION - elapsed);
         setTimeLeft(remaining);
       }
     }
@@ -147,13 +160,6 @@ const Battle = () => {
             newMap.set(data.element.toLowerCase(), data.audio_b64);
             return newMap;
           });
-          
-          // Play audio immediately for the newly created element
-          try {
-            playBase64Audio(data.audio_b64, 0.5);
-          } catch (error) {
-            console.error('Failed to play element creation audio:', error);
-          }
         }
         
         // Create a new element object with proper formatting
@@ -167,6 +173,18 @@ const Battle = () => {
           emoji: data.emoji || '✨', // Use generated emoji or fallback to sparkles
           en_text: data.en_text, // Store English text separately for matching
         };
+
+        // If audio is available, show speech recognition modal first
+        if (data.audio_b64) {
+          setSpeechModalData({
+            elementName: data.element,
+            elementEmoji: data.emoji || '✨',
+            groundTruthAudio: data.audio_b64,
+            pendingElementData: { data, newElement }
+          });
+          setShowSpeechModal(true);
+          return; // Don't add element to game yet - wait for speech recognition success
+        }
 
         // Check if this was from a canvas combination (placeholder replacement)
         const pendingCombination = (window as any).pendingCombination;
@@ -373,14 +391,14 @@ const Battle = () => {
 
   // Function to play audio for an element
   const playElementAudio = async (elementText: string) => {
-    const audioData = elementAudio.get(elementText.toLowerCase());
-    if (audioData) {
-      try {
-        await playBase64Audio(audioData, 0.5); // Lower volume so it's not too loud
-      } catch (error) {
-        console.error('Failed to play element audio:', error);
+      const audioData = elementAudio.get(elementText.toLowerCase());
+      if (audioData) {
+        try {
+          await playBase64Audio(audioData, GAME_CONFIG.AUDIO_PLAYBACK_VOLUME);
+        } catch (error) {
+          console.error('Failed to play element audio:', error);
+        }
       }
-    }
   };
 
   // Function to fetch language-specific initial elements
@@ -434,7 +452,7 @@ const Battle = () => {
   };
 
   const restartBattle = () => {
-    setTimeLeft(120); // 2 minutes
+    setTimeLeft(GAME_CONFIG.BATTLE_DURATION);
     setIsActive(true);
     setCanvasElements([]);
     setDiscoveries([]);
@@ -466,15 +484,83 @@ const Battle = () => {
     
     setElementNotifications(prev => [...prev, notification]);
     
-    // Auto remove after 4 seconds
+    // Auto remove after configured duration
     setTimeout(() => {
       setElementNotifications(prev => prev.filter(n => n.id !== id));
-    }, 4000);
+    }, GAME_CONFIG.ELEMENT_NOTIFICATION_DURATION);
   };
 
   const displayGameOverlay = (type: 'victory' | 'defeat' | 'timeup', data: any) => {
     setGameOverlayData({ type, ...data });
     setShowGameOverlay(true);
+  };
+
+  // Handle successful speech recognition
+  const handleSpeechRecognitionSuccess = () => {
+    if (!speechModalData) return;
+
+    const { pendingElementData } = speechModalData;
+    const { data, newElement } = pendingElementData;
+
+        // Play audio immediately for the newly created element (now that pronunciation is verified)
+        try {
+          playBase64Audio(data.audio_b64, GAME_CONFIG.AUDIO_PLAYBACK_VOLUME);
+        } catch (error) {
+          console.error('Failed to play element creation audio:', error);
+        }
+
+    // Check if this was from a canvas combination (placeholder replacement)
+    const pendingCombination = (window as any).pendingCombination;
+    if (pendingCombination) {
+      // Find the placeholder and replace it with the new element at the same position
+      setCanvasElements(prev => {
+        const placeholder = prev.find(el => el.id === pendingCombination.id);
+        if (placeholder) {
+          const replacementElement = {
+            ...newElement,
+            x: placeholder.x,
+            y: placeholder.y,
+            id: `canvas-${newElement.id}` // Ensure unique canvas ID
+          };
+          return prev.map(el => 
+            el.id === pendingCombination.id ? replacementElement : el
+          );
+        }
+        return prev;
+      });
+      
+      // Clear the pending combination
+      delete (window as any).pendingCombination;
+    }
+
+    // Add to discoveries if not already there
+    setDiscoveries(prev => {
+      if (!prev.find(el => el.text === newElement.text)) {
+        return [...prev, newElement];
+      }
+      return prev;
+    });
+
+    // Add to available elements for further combinations
+    setAvailableElements(prev => {
+      if (!prev.find(el => el.text === newElement.text)) {
+        return [...prev, newElement];
+      }
+      return prev;
+    });
+
+    // Show custom element notification
+    showElementNotification(
+      data.element,
+      data.emoji || '✨',
+      `${pendingCombination?.element1.text || ''} + ${pendingCombination?.element2.text || ''}`,
+      undefined,
+      true
+    );
+
+    // Close the speech modal
+    setShowSpeechModal(false);
+    setSpeechModalData(null);
   };
   if (isLoading) {
     return (
@@ -553,7 +639,7 @@ const Battle = () => {
               isActive={isActive} 
               gameEnded={gameEnded}
               playerWon={playerWon}
-              totalDuration={120}
+              totalDuration={GAME_CONFIG.BATTLE_DURATION}
             />
           </div>
 
@@ -690,6 +776,22 @@ const Battle = () => {
           </div>
         ))}
       </div>
+
+      {/* Speech Recognition Modal */}
+      {speechModalData && (
+        <SpeechRecognitionModal
+          isOpen={showSpeechModal}
+          onClose={() => {
+            setShowSpeechModal(false);
+            setSpeechModalData(null);
+          }}
+          onSuccess={handleSpeechRecognitionSuccess}
+          elementName={speechModalData.elementName}
+          elementEmoji={speechModalData.elementEmoji}
+          groundTruthAudio={speechModalData.groundTruthAudio}
+          threshold={GAME_CONFIG.SPEECH_RECOGNITION_THRESHOLD}
+        />
+      )}
     </div>
   );
 };

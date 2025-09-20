@@ -246,7 +246,7 @@ const checkForGameEnd = (socket, roomId, createdElementData) => {
       }
     });
     
-    console.log(`🏆 Game ended! ${socket.user.name} won room ${roomId} by creating ${createdElement}`);
+    console.log(`🏆 Game ended! ${socket.user.name} won room ${roomId} by creating ${createdElemenEnglish}`);
     return true;
   }
   
