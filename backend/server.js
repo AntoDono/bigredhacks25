@@ -205,6 +205,59 @@ const removePlayerFromRoom = (userId, roomId) => {
   return true;
 };
 
+// Helper function to save element to user's vocabulary
+async function saveToUserVocabulary(userId, elementData, languageCode) {
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      console.warn(`User ${userId} not found for vocabulary update`);
+      return;
+    }
+
+    // Initialize learnedVocabulary Map if it doesn't exist
+    if (!user.learnedVocabulary) {
+      user.learnedVocabulary = new Map();
+    }
+
+    // Get existing vocabulary for this language or initialize empty array
+    const existingVocabulary = user.learnedVocabulary.get(languageCode) || [];
+    const existingKeys = new Set(existingVocabulary.map(item => item.elementKey));
+
+    // Create element key from English name
+    const elementKey = elementData.en_text || elementData.element.toLowerCase().replace(/\s+/g, '_');
+
+    // Skip if we already have this element for this language
+    if (existingKeys.has(elementKey)) {
+      return;
+    }
+
+    // Add new vocabulary item
+    const vocabularyItem = {
+      elementKey,
+      element: elementData.element, // Translated element name
+      en_text: elementData.en_text || elementData.element, // English reference
+      emoji: elementData.emoji || '✨',
+      audio_b64: elementData.audio_b64 || null,
+      learnedAt: new Date()
+    };
+
+    existingVocabulary.push(vocabularyItem);
+    
+    // Update the vocabulary for this language
+    user.learnedVocabulary.set(languageCode, existingVocabulary);
+    
+    // Mark the field as modified for Map types
+    user.markModified('learnedVocabulary');
+    
+    await user.save();
+    
+    console.log(`📚 Added to vocabulary: ${elementKey} -> ${elementData.element} (${languageCode}) for user ${userId}`);
+    
+  } catch (error) {
+    console.error('Error saving to user vocabulary:', error);
+  }
+}
+
 const checkForGameEnd = (socket, roomId, createdElementData) => {
   const room = rooms[roomId];
   if (!room || room.gameStatus === 'ended') return false;
@@ -475,6 +528,9 @@ const handleCreateElement = async (socket, data) => {
     }
     
     console.log(`✨ Element created: ${newElement} by ${socket.user.name}`);
+    
+    // Save element to user's vocabulary (languageCode already declared above)
+    await saveToUserVocabulary(socket.user.id, result, languageCode);
     
   } catch (error) {
     console.error('Error creating element:', error);
@@ -1024,83 +1080,6 @@ app.get('/api/rooms/:roomId/check', (req, res) => {
   }
 });
 
-// Update user's learned vocabulary with elements from game
-app.post('/api/users/:userId/vocabulary', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const { elements, languageCode } = req.body;
-
-    // Verify user is updating their own vocabulary or is admin
-    if (req.user.id !== userId) {
-      return res.status(403).json({ error: 'Unauthorized to update this user\'s vocabulary' });
-    }
-
-    if (!elements || !Array.isArray(elements) || !languageCode) {
-      return res.status(400).json({ error: 'Invalid request body. Expected elements array and languageCode' });
-    }
-
-    console.log(`Updating vocabulary for user ${userId} in language ${languageCode} with ${elements.length} elements`);
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Initialize learnedVocabulary Map if it doesn't exist
-    if (!user.learnedVocabulary) {
-      user.learnedVocabulary = new Map();
-    }
-
-    // Get existing vocabulary for this language or initialize empty array
-    const existingVocabulary = user.learnedVocabulary.get(languageCode) || [];
-    const existingKeys = new Set(existingVocabulary.map(item => item.elementKey));
-
-    // Process each element from the game
-    for (const element of elements) {
-      const { elementKey, element: elementName, en_text, emoji, audio_b64 } = element;
-      
-      // Skip if we already have this element for this language
-      if (existingKeys.has(elementKey)) {
-        continue;
-      }
-
-      // Add new vocabulary item
-      const vocabularyItem = {
-        elementKey,
-        element: elementName,
-        en_text: en_text || elementName, // Fallback to elementName if en_text not provided
-        emoji: emoji || '✨', // Fallback emoji
-        audio_b64: audio_b64 || null,
-        learnedAt: new Date()
-      };
-
-      existingVocabulary.push(vocabularyItem);
-      console.log(`Added new vocabulary: ${elementKey} -> ${elementName} (${languageCode})`);
-    }
-
-    // Update the vocabulary for this language
-    user.learnedVocabulary.set(languageCode, existingVocabulary);
-    
-    // Mark the field as modified for Map types
-    user.markModified('learnedVocabulary');
-    
-    await user.save();
-
-    const addedCount = elements.filter(e => !existingKeys.has(e.elementKey)).length;
-    
-    res.json({ 
-      message: 'Vocabulary updated successfully',
-      addedCount,
-      totalVocabularyCount: existingVocabulary.length,
-      languageCode
-    });
-
-  } catch (error) {
-    console.error('Error updating user vocabulary:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // Get user's learned vocabulary for a specific language
 app.get('/api/users/:userId/vocabulary/:languageCode', authenticateToken, async (req, res) => {
   try {
@@ -1108,7 +1087,7 @@ app.get('/api/users/:userId/vocabulary/:languageCode', authenticateToken, async 
     const languageCode = req.params.languageCode;
 
     // Verify user is accessing their own vocabulary or is admin
-    if (req.user.id !== userId) {
+    if (req.user.userId !== userId) {
       return res.status(403).json({ error: 'Unauthorized to access this user\'s vocabulary' });
     }
 
