@@ -247,7 +247,7 @@ const Battle = () => {
 
 
   const handleLeaveRoom = () => {
-    navigate('/');
+    navigate('/home');
   };
 
   return (
