@@ -132,4 +132,49 @@ export const api = {
 
     return response.json();
   },
+
+  // Update user's learned vocabulary
+  async updateUserVocabulary(userId: string, elements: any[], languageCode: string, token: string): Promise<{
+    message: string;
+    addedCount: number;
+    totalVocabularyCount: number;
+    languageCode: string;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/vocabulary`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ elements, languageCode }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update vocabulary');
+    }
+
+    return response.json();
+  },
+
+  // Get user's learned vocabulary for a language
+  async getUserVocabulary(userId: string, languageCode: string, token: string): Promise<{
+    languageCode: string;
+    vocabulary: any[];
+    count: number;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/vocabulary/${languageCode}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch vocabulary');
+    }
+
+    return response.json();
+  },
 };
