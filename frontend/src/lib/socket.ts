@@ -5,11 +5,13 @@ import { API_BASE_URL } from './api';
 export interface SocketEvents {
   // Client to server
   'join_room': (data: { roomId: string; roomName?: string; roomDescription?: string }) => void;
+  'leave_room': () => void;
   'message': (data: { type: string; data: any }) => void;
 
   // Server to client
   'room_joined': (data: { success: boolean; roomId: string; room: any; message: string }) => void;
   'room_join_error': (data: { success: boolean; message: string; error: string }) => void;
+  'room_left': (data: { success: boolean; message: string; error?: string }) => void;
   'message_response': (data: { type: string; success: boolean; message: string; data: any; error?: string }) => void;
   'message_broadcast': (data: { type: string; data: any }) => void;
   'message_error': (data: { success: boolean; message: string; originalMessage: any; error?: string }) => void;
@@ -163,6 +165,14 @@ class SocketClient {
     this.socket.emit('join_room', roomData);
   }
 
+  leaveRoom() {
+    if (!this.socket?.connected) {
+      throw new Error('Socket not connected');
+    }
+    // alert('leave_room');
+    this.socket.emit('leave_room');
+  }
+
   sendMessage(messageData: MessageData) {
     if (!this.socket?.connected) {
       throw new Error('Socket not connected');
@@ -192,6 +202,10 @@ class SocketClient {
     this.socket?.on('room_join_error', callback);
   }
 
+  onRoomLeft(callback: (data: any) => void) {
+    this.socket?.on('room_left', callback);
+  }
+
   onMessageResponse(callback: (data: any) => void) {
     this.socket?.on('message_response', callback);
   }
@@ -208,7 +222,7 @@ class SocketClient {
     this.socket?.on('player_left', callback);
   }
 
-  off(event: string, callback?: Function) {
+  off(event: string, callback?: (...args: any[]) => void) {
     this.socket?.off(event, callback);
   }
 

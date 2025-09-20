@@ -33,6 +33,7 @@ const Battle = () => {
   const { 
     connected, 
     joinRoom, 
+    leaveRoom,
     createElement, 
     startGame, 
     currentRoom,
@@ -247,6 +248,9 @@ const Battle = () => {
 
 
   const handleLeaveRoom = () => {
+    if (connected && currentRoom) {
+      leaveRoom();
+    }
     navigate('/home');
   };
 
