@@ -1,0 +1,282 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Duelingo Design System - Language Learning Battle Game */
+
+@layer base {
+  :root {
+    /* Core Background & Text */
+    --background: 210 20% 98%;
+    --foreground: 220 15% 15%;
+
+    /* Card System */
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+
+    /* Interactive Elements */
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+
+    /* Brand Colors - Language Learning Theme */
+    --primary: 140 85% 45%; /* Vibrant Green */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 140 70% 55%;
+
+    --secondary: 200 95% 55%; /* Learning Blue */
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 280 90% 65%; /* Creative Purple */
+    --accent-foreground: 0 0% 100%;
+
+    /* Battle System Colors */
+    --battle: 25 95% 60%; /* Energy Orange */
+    --battle-foreground: 0 0% 100%;
+
+    --success: 140 85% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 95% 60%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Neutral Tones */
+    --muted: 210 15% 95%;
+    --muted-foreground: 220 10% 45%;
+
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 94%;
+    --ring: 140 85% 45%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-battle: linear-gradient(135deg, hsl(var(--battle)), hsl(var(--accent)));
+    --gradient-learning: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--accent)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)));
+
+    /* Shadows & Effects */
+    --shadow-card: 0 4px 20px -2px hsl(var(--primary) / 0.1);
+    --shadow-battle: 0 8px 30px -4px hsl(var(--battle) / 0.2);
+    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
+
+    /* Animations & Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-battle: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+    --radius: 1rem;
+
+    /* Battle Canvas */
+    --canvas-bg: 210 25% 96%;
+    --canvas-grid: 210 20% 90%;
+    --element-hover: 210 30% 92%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark mode overrides for battle game */
+    --background: 220 20% 8%;
+    --foreground: 210 40% 95%;
+    --card: 220 20% 12%;
+    --card-foreground: 210 40% 95%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 210 40% 95%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 210 15% 65%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --canvas-bg: 220 20% 10%;
+    --canvas-grid: 220 15% 15%;
+    --element-hover: 220 20% 18%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer components {
+  /* Hero Button Variants */
+  .btn-hero {
+    @apply bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-glow transition-all duration-300 hover:scale-105;
+  }
+
+  .btn-battle {
+    @apply bg-gradient-to-r from-battle to-accent text-battle-foreground font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-battle transition-all duration-200 hover:scale-102;
+  }
+
+  .btn-learning {
+    @apply bg-gradient-to-r from-secondary to-accent text-secondary-foreground font-medium py-2 px-4 rounded-lg transition-all duration-200 hover:brightness-110;
+  }
+
+  /* Card Animations */
+  .card-float {
+    @apply transition-all duration-300 hover:translate-y-[-8px] hover:shadow-card;
+  }
+
+  .card-battle {
+    @apply bg-card border border-border rounded-xl p-6 shadow-card hover:shadow-battle transition-all duration-300;
+  }
+
+  /* Battle Elements */
+  .battle-element {
+    @apply bg-card border-2 border-border rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing transition-all duration-200 hover:border-primary hover:shadow-md select-none;
+  }
+
+  .battle-element:hover {
+    @apply bg-element-hover scale-105;
+  }
+
+  .battle-element.dragging {
+    @apply rotate-2 scale-110 shadow-lg z-50;
+  }
+
+  /* Canvas Styling */
+  .battle-canvas {
+    @apply bg-canvas-bg border-2 border-dashed border-canvas-grid rounded-xl min-h-[400px] relative overflow-hidden;
+    background-image: radial-gradient(circle, hsl(var(--canvas-grid)) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Spectator Mode */
+  .spectator-split {
+    @apply grid grid-cols-2 gap-4 h-full;
+  }
+
+  /* Timer Styles */
+  .timer-warning {
+    @apply text-warning animate-pulse;
+  }
+
+  .timer-danger {
+    @apply text-destructive animate-bounce;
+  }
+
+  /* Room Code Input */
+  .room-code-input {
+    @apply text-center text-2xl font-mono tracking-widest uppercase;
+  }
+
+  /* Discovery Sidebar */
+  .discovery-item {
+    @apply flex items-center gap-2 p-2 rounded-lg hover:bg-muted cursor-pointer transition-colors;
+  }
+
+  /* Learning Story Display */
+  .story-word {
+    @apply inline-flex items-center gap-1 bg-accent/20 text-accent-foreground px-2 py-1 rounded-md font-medium;
+  }
+}
+
+@layer utilities {
+  /* Custom Gradients */
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .bg-gradient-battle {
+    background: var(--gradient-battle);
+  }
+
+  .bg-gradient-learning {
+    background: var(--gradient-learning);
+  }
+
+  /* Shadow Effects */
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-battle {
+    box-shadow: var(--shadow-battle);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Animations */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes pulse-glow {
+    0% { box-shadow: 0 0 5px hsl(var(--primary) / 0.5); }
+    100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.8), 0 0 30px hsl(var(--primary) / 0.4); }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Responsive Battle Layout */
+  .battle-layout {
+    @apply grid gap-4;
+    grid-template-areas: 
+      "timer timer"
+      "canvas sidebar"
+      "prompt prompt";
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .battle-timer { grid-area: timer; }
+  .battle-canvas-area { grid-area: canvas; }
+  .battle-sidebar { grid-area: sidebar; }
+  .battle-prompt { grid-area: prompt; }
+
+  @media (max-width: 768px) {
+    .battle-layout {
+      grid-template-areas: 
+        "timer"
+        "prompt"
+        "canvas"
+        "sidebar";
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto 1fr auto;
+    }
+  }
+}
+
