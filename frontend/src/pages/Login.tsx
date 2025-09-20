@@ -198,41 +198,6 @@ const Login = () => {
               </Button>
             </div>
 
-            {/* Delete Account Button - Only show if user is logged in */}
-            {user && token && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      className="w-full h-10 text-sm"
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      {isDeleting ? 'Deleting...' : 'Delete Account'}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Account</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete your account? This action cannot be undone.
-                        All your data will be permanently removed from our servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteAccount}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Delete Account
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
