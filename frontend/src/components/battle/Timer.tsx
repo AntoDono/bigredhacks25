@@ -47,11 +47,11 @@ const Timer = ({ timeLeft, isActive, gameEnded, playerWon, totalDuration = 120 }
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 shadow-medium hover:shadow-large transition-shadow duration-300">
       <CardContent className="p-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`${getStatusColor()} transition-colors`}>
+            <div className={`${getStatusColor()} transition-colors p-2 rounded-lg bg-muted/30`}>
               {getStatusIcon()}
             </div>
             <div>
@@ -64,18 +64,18 @@ const Timer = ({ timeLeft, isActive, gameEnded, playerWon, totalDuration = 120 }
 
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Time Remaining</p>
-            <div className={`text-3xl font-bold font-mono ${getTimerClass()} ${getStatusColor()}`}>
+            <div className={`text-3xl font-bold font-mono ${getTimerClass()} ${getStatusColor()} drop-shadow-sm`}>
               {formatTime(timeLeft)}
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="mt-4 w-full bg-muted rounded-full h-2 overflow-hidden">
+        <div className="mt-4 w-full bg-muted/60 rounded-full h-3 overflow-hidden shadow-soft">
           <div
             className={`
-              h-full transition-all duration-1000 ease-linear
-              ${timeLeft <= 10 ? 'bg-destructive' : timeLeft <= 30 ? 'bg-warning' : 'bg-primary'}
+              h-full transition-all duration-1000 ease-linear rounded-full
+              ${timeLeft <= 10 ? 'bg-destructive shadow-sm' : timeLeft <= 30 ? 'bg-warning shadow-sm' : 'bg-primary shadow-sm'}
             `}
             style={{ width: `${(timeLeft / totalDuration) * 100}%` }}
           />

@@ -42,16 +42,35 @@ const elementCacheSchema = new mongoose.Schema({
   element1: { type: String, required: true },
   element2: { type: String, required: true },
   result: {
-    element: { type: String, required: true },
-    emoji: { type: String, required: true }
+    element: { type: String, required: true }, // Translated element name
+    en_text: { type: String, required: true }, // English element name for target matching
+    emoji: { type: String, required: true },
+    audio_b64: { type: String } // Base64 encoded audio for TTS
   },
+  languageCode: { type: String, default: 'en-US' }, // Language for TTS audio
   createdAt: { type: Date, default: Date.now }
 });
 
-// Create compound index for efficient lookups (order-independent)
+// Create compound index for efficient lookups (order-independent, language-aware)
 elementCacheSchema.index({ 
   element1: 1, 
-  element2: 1 
+  element2: 1,
+  languageCode: 1
+});
+
+// Initial Elements Audio Schema - for storing TTS audio of starter elements
+const initialElementsAudioSchema = new mongoose.Schema({
+  elementKey: { type: String, required: true }, // English key (e.g., 'water', 'fire')
+  languageCode: { type: String, required: true }, // Language code
+  elementName: { type: String, required: true }, // Translated name
+  audio_b64: { type: String }, // Base64 encoded audio
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Index for efficient lookups
+initialElementsAudioSchema.index({ 
+  elementKey: 1, 
+  languageCode: 1 
 });
 
 // Create models
@@ -59,5 +78,6 @@ const User = mongoose.model("User", userSchema);
 const Duel = mongoose.model("Duel", duelSchema);
 const DuelRequest = mongoose.model("DuelRequest", duelRequestSchema);
 const ElementCache = mongoose.model("ElementCache", elementCacheSchema);
+const InitialElementsAudio = mongoose.model("InitialElementsAudio", initialElementsAudioSchema);
 
-module.exports = { User, Duel, DuelRequest, ElementCache };
+module.exports = { User, Duel, DuelRequest, ElementCache, InitialElementsAudio };

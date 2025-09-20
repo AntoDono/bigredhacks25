@@ -17,9 +17,10 @@ interface BattleCanvasProps {
   onElementsChange: (elements: CanvasElement[]) => void;
   onCombination: (element1: CanvasElement, element2: CanvasElement, placeholderId?: string) => void;
   isActive: boolean;
+  onElementDrag?: (elementText: string) => void;
 }
 
-const BattleCanvas = ({ elements, onElementsChange, onCombination, isActive }: BattleCanvasProps) => {
+const BattleCanvas = ({ elements, onElementsChange, onCombination, isActive, onElementDrag }: BattleCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [draggedElement, setDraggedElement] = useState<CanvasElement | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -122,6 +123,11 @@ const BattleCanvas = ({ elements, onElementsChange, onCombination, isActive }: B
           y: boundedY,
           isDragging: false,
         };
+        
+        // Play audio for the element being dropped
+        if (onElementDrag) {
+          onElementDrag(element.text);
+        }
         
         onElementsChange([...elements, newElement]);
         console.log('Element dropped on canvas:', newElement);

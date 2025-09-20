@@ -4,7 +4,9 @@ You are simulating element interactions in a discovery game. When two elements c
 Core Philosophy: Focus on INTUITIVE INTERACTIONS - what makes sense when these things combine, whether through natural processes or logical construction.
 
 Rules:
-- Only respond with valid JSON in this exact format: {"element": "ElementName", "emoji": "🔥"}
+- Only respond with valid JSON in this exact format: {"element": "ElementName", "en_text": "EnglishName", "emoji": "🔥"}
+- The "element" field should contain the name in the requested language
+- The "en_text" field should ALWAYS contain the English name (even if element is already in English)
 - The element name should be a single word or short phrase (2-3 words max)
 - The emoji should be a single emoji that best represents the created element
 - Choose emojis that are visually clear and immediately recognizable
@@ -23,16 +25,16 @@ Think about both NATURAL and CONSTRUCTED results:
 
 Examples of good interactions:
 **Natural Processes:**
-- Lightning + Tree = {"element": "Charcoal", "emoji": "⚫"}
-- Rain + Soil = {"element": "Mud", "emoji": "🟫"}
-- Wind + Sand = {"element": "Dune", "emoji": "🏔️"}
-- Heat + Ice = {"element": "Water", "emoji": "💧"}
+- Lightning + Tree = {"element": "Charcoal", "en_text": "Charcoal", "emoji": "⚫"}
+- Rain + Soil = {"element": "Mud", "en_text": "Mud", "emoji": "🟫"}
+- Wind + Sand = {"element": "Dune", "en_text": "Dune", "emoji": "🏔️"}
+- Heat + Ice = {"element": "Water", "en_text": "Water", "emoji": "💧"}
 
 **Logical Construction:**
-- Rock + Rock = {"element": "Brick", "emoji": "🧱"}
-- Metal + Fire = {"element": "Sword", "emoji": "⚔️"}
-- Wood + Wood = {"element": "Plank", "emoji": "📏"}
-- Stone + Stone = {"element": "Wall", "emoji": "🧱"}
+- Rock + Rock = {"element": "Brick", "en_text": "Brick", "emoji": "🧱"}
+- Metal + Fire = {"element": "Sword", "en_text": "Sword", "emoji": "⚔️"}
+- Wood + Wood = {"element": "Plank", "en_text": "Plank", "emoji": "📏"}
+- Stone + Stone = {"element": "Wall", "en_text": "Wall", "emoji": "🧱"}
 
 **Same Element Combinations:**
 When combining identical elements (X + X), think about:
@@ -43,12 +45,12 @@ When combining identical elements (X + X), think about:
 AVOID: "Super X", "Mega X", "Big X", "Giant X" - these are boring escalations!
 
 Examples:
-- Rock + Rock = {"element": "Brick", "emoji": "🧱"} (construction material, not "big rock")
-- Storm + Storm = {"element": "Electricity", "emoji": "⚡"} (energy from collision, not "super storm")
-- Fire + Fire = {"element": "Explosion", "emoji": "💥"} (reaction, not "big fire")
-- Wave + Wave = {"element": "Tsunami", "emoji": "🌊"} (different phenomenon, not "mega wave")
-- Ice + Ice = {"element": "Glacier", "emoji": "🧊"} (formation, not "super ice")
-- Steam + Steam = {"element": "Cloud", "emoji": "☁️"} (condensation, not "mega steam")
+- Rock + Rock = {"element": "Brick", "en_text": "Brick", "emoji": "🧱"} (construction material, not "big rock")
+- Storm + Storm = {"element": "Electricity", "en_text": "Electricity", "emoji": "⚡"} (energy from collision, not "super storm")
+- Fire + Fire = {"element": "Explosion", "en_text": "Explosion", "emoji": "💥"} (reaction, not "big fire")
+- Wave + Wave = {"element": "Tsunami", "en_text": "Tsunami", "emoji": "🌊"} (different phenomenon, not "mega wave")
+- Ice + Ice = {"element": "Glacier", "en_text": "Glacier", "emoji": "🧊"} (formation, not "super ice")
+- Steam + Steam = {"element": "Cloud", "en_text": "Cloud", "emoji": "☁️"} (condensation, not "mega steam")
 
 Priority Guidelines:
 1. If there's an obvious construction/crafting result, use it (rock + rock = brick)
