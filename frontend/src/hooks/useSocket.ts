@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 interface UseSocketReturn {
   connected: boolean;
   joinRoom: (roomId: string, roomName?: string, roomDescription?: string) => void;
+  leaveRoom: () => void;
   createElement: (element1: string, element2: string) => void;
   startGame: () => void;
   currentRoom: any;
@@ -68,7 +69,7 @@ export const useSocket = (): UseSocketReturn => {
     // Message events
     const handleMessageResponse = (data: any) => {
       console.log('Message response:', data);
-      
+
       switch (data.type) {
         case 'create-element':
           if (data.success) {
@@ -101,7 +102,7 @@ export const useSocket = (): UseSocketReturn => {
 
     const handleMessageBroadcast = (data: any) => {
       console.log('Message broadcast:', data);
-      
+
       switch (data.type) {
         case 'player_joined':
           toast.info(data.data.message);
@@ -172,6 +173,16 @@ export const useSocket = (): UseSocketReturn => {
       }
     };
 
+    const handleRoomLeft = (data: any) => {
+      console.log('Room left:', data);
+      if (data.success) {
+        toast.success(data.message);
+        setCurrentRoom(null);
+      } else {
+        toast.error(data.message);
+      }
+    };
+
     // Register event listeners
     socketClient.onRoomJoined(handleRoomJoined);
     socketClient.onRoomJoinError(handleRoomJoinError);
@@ -179,6 +190,7 @@ export const useSocket = (): UseSocketReturn => {
     socketClient.onMessageBroadcast(handleMessageBroadcast);
     socketClient.onMessageError(handleMessageError);
     socketClient.onPlayerLeft(handlePlayerLeft);
+    socketClient.onRoomLeft(handleRoomLeft);
 
     // Cleanup function
     return () => {
@@ -188,6 +200,7 @@ export const useSocket = (): UseSocketReturn => {
       socketClient.off('message_broadcast', handleMessageBroadcast);
       socketClient.off('message_error', handleMessageError);
       socketClient.off('player_left', handlePlayerLeft);
+      socketClient.off('room_left', handleRoomLeft);
     };
   }, [connected, currentRoom]);
 
@@ -197,9 +210,18 @@ export const useSocket = (): UseSocketReturn => {
       toast.error('Not connected to game server');
       return;
     }
-    
+
     setRoomError(null);
     socketClient.joinRoom({ roomId, roomName, roomDescription, language });
+  }, [connected]);
+
+  const leaveRoom = useCallback(() => {
+    if (!connected) {
+      toast.error('Not connected to game server');
+      return;
+    }
+
+    socketClient.leaveRoom();
   }, [connected]);
 
   const createElement = useCallback((element1: string, element2: string) => {
@@ -207,7 +229,7 @@ export const useSocket = (): UseSocketReturn => {
       toast.error('Not connected to game server');
       return;
     }
-    
+
     socketClient.createElement(element1, element2);
   }, [connected]);
 
@@ -216,7 +238,7 @@ export const useSocket = (): UseSocketReturn => {
       toast.error('Not connected to game server');
       return;
     }
-    
+
     socketClient.startGame();
   }, [connected]);
 
@@ -248,6 +270,7 @@ export const useSocket = (): UseSocketReturn => {
   return {
     connected,
     joinRoom,
+    leaveRoom,
     createElement,
     startGame,
     currentRoom,

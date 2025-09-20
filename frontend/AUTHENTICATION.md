@@ -61,3 +61,24 @@ VITE_API_URL=http://localhost:8000
 6. User can logout from the profile component
 
 The authentication state persists across browser sessions using localStorage.
+
+## Delete Account Functionality
+
+### Updated Profile Component (`src/components/Profile.tsx`)
+- Added delete account button with confirmation dialog
+- Uses AlertDialog component for user confirmation
+- Sends authenticated DELETE request to `/api/users/:id`
+- Includes proper error handling and loading states
+- Automatically logs out user and redirects to home after successful deletion
+
+### Security Features
+- Requires authentication token in Authorization header
+- User can only delete their own account (enforced by backend)
+- Confirmation dialog prevents accidental deletions
+- Clear warning message about permanent data loss
+
+### API Integration
+- `DELETE /api/users/:id` - Delete user account
+- Requires Bearer token authentication
+- Returns success/error response
+- Backend validates user can only delete their own account

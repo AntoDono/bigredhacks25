@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Eye, Users, Clock } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mock data for spectator view
 const MOCK_PLAYERS = [
@@ -33,9 +34,17 @@ const MOCK_PLAYERS = [
 const Spectate = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
   const [players, setPlayers] = useState(MOCK_PLAYERS);
   const [targetWord] = useState("Tormenta");
   const [battleTime, setBattleTime] = useState(60);
+
+  // Check authentication
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   // Simulate real-time updates
   useEffect(() => {
@@ -135,6 +144,21 @@ const Spectate = () => {
       </Card>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-foreground text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to login
+  }
 
   return (
     <div className="min-h-screen bg-background p-4">

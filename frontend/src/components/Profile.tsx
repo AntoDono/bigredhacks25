@@ -1,10 +1,17 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { LogOut, User, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { API_BASE_URL } from "@/lib/api";
 
 const Profile = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
+  const navigate = useNavigate();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!user) return null;
 
@@ -18,6 +25,37 @@ const Profile = () => {
     });
   };
 
+  const handleDeleteAccount = async () => {
+    if (!token) {
+      toast.error('Authentication token not found');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/${user.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        toast.success('Account deleted successfully');
+        logout();
+        navigate('/');
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Failed to delete account');
+      }
+    } catch (error) {
+      toast.error('Network error. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Card className="w-full max-w-md bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="text-center">
@@ -29,6 +67,7 @@ const Profile = () => {
       </CardHeader>
       
       <CardContent className="space-y-4">
+<<<<<<< HEAD
         <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-200">
           <div className="space-y-1">
             <p><strong className="text-gray-900">User ID:</strong> <span className="font-mono text-xs">{user.id}</span></p>
@@ -44,6 +83,53 @@ const Profile = () => {
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out
         </Button>
+=======
+        <div className="text-sm text-muted-foreground">
+          <p><strong>Member since:</strong> {formatDate(user.createdAt)}</p>
+        </div>
+        
+        <div className="space-y-2">
+          <Button 
+            onClick={logout}
+            variant="outline" 
+            className="w-full"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                className="w-full"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete your account? This action cannot be undone. 
+                  All your data will be permanently removed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Account'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+>>>>>>> d37edc4de67309d2f6bacd36b80a7c526deca527
       </CardContent>
     </Card>
   );

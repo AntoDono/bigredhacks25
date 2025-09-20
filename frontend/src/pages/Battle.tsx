@@ -35,10 +35,11 @@ const Battle = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { 
     connected, 
     joinRoom, 
+    leaveRoom,
     createElement, 
     startGame, 
     currentRoom,
@@ -67,10 +68,10 @@ const Battle = () => {
 
   // Check authentication
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   // Join room when component mounts and socket is connected
   useEffect(() => {
@@ -445,7 +446,10 @@ const Battle = () => {
 
 
   const handleLeaveRoom = () => {
-    navigate('/');
+    if (connected && currentRoom) {
+      leaveRoom();
+    }
+    navigate('/home');
   };
 
   const showElementNotification = (element: string, emoji: string, combination?: string, playerName?: string, isOwnDiscovery = true) => {
@@ -472,6 +476,20 @@ const Battle = () => {
     setGameOverlayData({ type, ...data });
     setShowGameOverlay(true);
   };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-foreground text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to login
+  }
 
   return (
     <div className="min-h-screen bg-background p-4">

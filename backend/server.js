@@ -564,6 +564,54 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle user leaving a room
+  socket.on('leave_room', () => {
+    try {
+      const userInfo = connectedUsers[socket.id];
+      if (userInfo && userInfo.roomId) {
+        const roomId = userInfo.roomId;
+        
+        // Leave socket room
+        socket.leave(roomId);
+        
+        // Remove user from room's player list
+        if (rooms[roomId]) {
+          removePlayerFromRoom(socket.userId, roomId);
+          
+          // Notify other players in the room
+          socket.to(roomId).emit('player_left', {
+            userId: socket.userId,
+            userName: socket.user.name,
+            playersCount: Object.keys(rooms[roomId].players).length
+          });
+          
+          console.log(`👥 User ${socket.user.name} left room ${roomId}`);
+        }
+        
+        // Clear user's room association
+        connectedUsers[socket.id].roomId = null;
+        
+        // Send confirmation to the leaving user
+        socket.emit('room_left', {
+          success: true,
+          message: 'Successfully left the room'
+        });
+      } else {
+        socket.emit('room_left', {
+          success: false,
+          message: 'You are not in a room'
+        });
+      }
+    } catch (error) {
+      console.error('Error leaving room:', error);
+      socket.emit('room_left', {
+        success: false,
+        message: 'Failed to leave room',
+        error: error.message
+      });
+    }
+  });
+
   // Handle incoming messages
   socket.on('message', async (messageData) => {
     try {

@@ -1,10 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Mail, Lock, User } from "lucide-react";
+import { ArrowLeft, Mail, Lock, User, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
@@ -12,7 +23,7 @@ import logo from "../assets/logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { user, token, login, logout, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -20,6 +31,14 @@ const Login = () => {
     password: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Redirect to home if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/home');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +60,23 @@ const Login = () => {
       toast.error(message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user || !token) return;
+    
+    setIsDeleting(true);
+    try {
+      await api.deleteUser(user.id, token);
+      logout();
+      toast.success("Account deleted successfully");
+      navigate('/');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete account';
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -170,6 +206,7 @@ const Login = () => {
                 {isSignUp ? "Sign in here" : "Sign up here"}
               </Button>
             </div>
+
           </CardContent>
         </Card>
       </div>
