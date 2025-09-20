@@ -1,0 +1,14 @@
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+  message: string;
+}

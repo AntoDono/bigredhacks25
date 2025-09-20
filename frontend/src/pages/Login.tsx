@@ -6,22 +6,52 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { API_BASE_URL } from "@/lib/api";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
-    password: "",
-    username: ""
+    password: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // For now, just simulate login/signup
-    toast.success(isSignUp ? "Account created successfully!" : "Welcome back!");
-    navigate('/home');
+    setIsLoading(true);
+
+    try {
+      const endpoint = isSignUp ? '/api/users' : '/api/login';
+      const body = isSignUp 
+        ? { name: formData.name, email: formData.email, password: formData.password }
+        : { email: formData.email, password: formData.password };
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        login(data.user, data.token);
+        toast.success(isSignUp ? "Account created successfully!" : "Welcome back!");
+        navigate('/home');
+      } else {
+        toast.error(data.error || 'An error occurred');
+      }
+    } catch (error) {
+      toast.error('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,17 +98,17 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {isSignUp && (
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-sm font-medium">
-                    Username
+                  <Label htmlFor="name" className="text-sm font-medium">
+                    Full Name
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
-                      id="username"
-                      name="username"
+                      id="name"
+                      name="name"
                       type="text"
-                      placeholder="Choose a username"
-                      value={formData.username}
+                      placeholder="Enter your full name"
+                      value={formData.name}
                       onChange={handleInputChange}
                       className="pl-10 h-12"
                       required={isSignUp}
@@ -128,8 +158,9 @@ const Login = () => {
               <Button 
                 type="submit" 
                 className="w-full btn-hero h-12 text-base"
+                disabled={isLoading}
               >
-                {isSignUp ? "Create Account" : "Sign In"}
+                {isLoading ? 'Loading...' : (isSignUp ? "Create Account" : "Sign In")}
               </Button>
             </form>
 
@@ -140,7 +171,10 @@ const Login = () => {
               <Button
                 variant="link"
                 className="text-primary font-semibold p-0 h-auto"
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setFormData({ name: '', email: '', password: '' });
+                }}
               >
                 {isSignUp ? "Sign in here" : "Sign up here"}
               </Button>
