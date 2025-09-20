@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/hooks/useSocket";
 import Profile from "@/components/Profile";
+import VocabularyDisplay from "@/components/VocabularyDisplay";
 import logo from "../assets/logo.png";
 
 const Home = () => {
@@ -359,8 +360,9 @@ const Home = () => {
 
           {/* Profile Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-4">
+            <div className="sticky top-4 space-y-6">
               <Profile />
+              <VocabularyDisplay />
             </div>
           </div>
         </div>

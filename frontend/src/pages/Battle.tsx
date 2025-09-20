@@ -15,7 +15,7 @@ import GameOverlay from "@/components/notifications/GameOverlay";
 import ElementNotification from "@/components/notifications/ElementNotification";
 import SpeechRecognitionModal from "@/components/battle/SpeechRecognitionModal";
 import { playBase64Audio } from "@/lib/utils";
-import { API_BASE_URL, api } from "@/lib/api";
+import { API_BASE_URL } from "@/lib/api";
 import { GAME_CONFIG } from "@/lib/gameConfig";
 
 // Default basic elements for the battle (fallback)
@@ -524,75 +524,6 @@ const Battle = () => {
   const displayGameOverlay = (type: 'victory' | 'defeat' | 'timeup', data: any) => {
     setGameOverlayData({ type, ...data });
     setShowGameOverlay(true);
-
-    // Update user's learned vocabulary when game ends
-    updateUserVocabulary();
-  };
-
-  // Update user's learned vocabulary with all elements from the game
-  const updateUserVocabulary = async () => {
-    if (!user?.id || !token) {
-      console.warn('No user or token available for vocabulary update');
-      return;
-    }
-
-    try {
-      // Get current language from location state or default to en-US
-      const languageCode = location.state?.language || 'en-US';
-      
-      // Collect all elements from the game (discoveries + available elements)
-      const allElements: any[] = [];
-      
-      // Add discoveries with their audio data
-      discoveries.forEach(element => {
-        const elementEnText = (element as any).en_text;
-        const elementKey = elementEnText || element.text.toLowerCase().replace(/\s+/g, '_');
-        const audioB64 = elementAudio.get(element.text.toLowerCase()) || 
-                         elementAudio.get(elementKey.toLowerCase()) || null;
-        
-        allElements.push({
-          elementKey,
-          element: element.text,
-          en_text: elementEnText || element.text,
-          emoji: element.emoji,
-          audio_b64: audioB64
-        });
-      });
-
-      // Add initial/available elements with their audio data
-      availableElements.forEach(element => {
-        const elementEnText = (element as any).en_text;
-        const elementKey = elementEnText || element.text.toLowerCase().replace(/\s+/g, '_');
-        const audioB64 = elementAudio.get(element.text.toLowerCase()) || 
-                         elementAudio.get(elementKey.toLowerCase()) || 
-                         elementAudio.get(element.id?.toLowerCase()) || null;
-        
-        // Check if not already added from discoveries
-        if (!allElements.find(e => e.elementKey === elementKey)) {
-          allElements.push({
-            elementKey,
-            element: element.text,
-            en_text: elementEnText || element.text,
-            emoji: element.emoji,
-            audio_b64: audioB64
-          });
-        }
-      });
-
-      console.log(`Updating vocabulary with ${allElements.length} elements for language ${languageCode}`);
-      
-      const result = await api.updateUserVocabulary(user.id, allElements, languageCode, token);
-      
-      if (result.addedCount > 0) {
-        toast.success(`Added ${result.addedCount} new words to your ${languageCode} vocabulary!`);
-      }
-      
-      console.log(`Vocabulary update complete: ${result.addedCount} new words added, ${result.totalVocabularyCount} total`);
-
-    } catch (error) {
-      console.error('Failed to update vocabulary:', error);
-      // Don't show error toast to user as this is background functionality
-    }
   };
 
   // Handle successful speech recognition
