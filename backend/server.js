@@ -144,6 +144,7 @@ const getRandomTargetElement = () => {
 };
 
 const createNewRoom = (roomId, roomName, roomDescription, creatorSocket, language = 'en-US') => {
+  console.log("Creating new room", roomId, roomName, roomDescription, creatorSocket, language);
   const targetElement = getRandomTargetElement();
   
   const newRoom = {
@@ -246,7 +247,7 @@ const checkForGameEnd = (socket, roomId, createdElementData) => {
       }
     });
     
-    console.log(`🏆 Game ended! ${socket.user.name} won room ${roomId} by creating ${createdElemenEnglish}`);
+    console.log(`🏆 Game ended! ${socket.user.name} won room ${roomId} by creating ${createdElementEnglish}`);
     return true;
   }
   
@@ -503,6 +504,9 @@ io.on('connection', (socket) => {
     const { roomId, roomName, roomDescription, language } = data;
     
     try {
+      if (rooms[roomId].gameStatus !== "waiting"){
+        throw new Error("Room is not waiting for players");
+      }
       // Leave current room if in one
       if (connectedUsers[socket.id].roomId) {
         socket.leave(connectedUsers[socket.id].roomId);
@@ -521,9 +525,14 @@ io.on('connection', (socket) => {
         }
       }
 
-      // Create room if it doesn't exist
+      // Check if room exists, throw error if not
       if (!rooms[roomId]) {
-        createNewRoom(roomId, roomName, roomDescription, socket, language);
+        socket.emit('room_join_error', {
+          success: false,
+          message: 'Room does not exist',
+          error: 'Room not found'
+        });
+        return;
       }
 
       // Add user to room
@@ -559,6 +568,70 @@ io.on('connection', (socket) => {
       socket.emit('room_join_error', {
         success: false,
         message: 'Failed to join room',
+        error: error.message
+      });
+    }
+  });
+
+  // Handle creating a new room
+  socket.on('create_room', (data) => {
+    const { roomId, roomName, roomDescription, language } = data;
+    
+    try {
+      // Leave current room if in one
+      if (connectedUsers[socket.id].roomId) {
+        socket.leave(connectedUsers[socket.id].roomId);
+        
+        // Remove user from previous room's player list
+        const prevRoomId = connectedUsers[socket.id].roomId;
+        if (rooms[prevRoomId]) {
+          removePlayerFromRoom(socket.userId, prevRoomId);
+          
+          // Notify other players in the previous room
+          socket.to(prevRoomId).emit('player_left', {
+            userId: socket.userId,
+            userName: socket.user.name,
+            playersCount: Object.keys(rooms[prevRoomId].players).length
+          });
+        }
+      }
+
+      // Check if room already exists
+      if (rooms[roomId]) {
+        socket.emit('room_create_error', {
+          success: false,
+          message: 'Room already exists',
+          error: 'Room ID already taken'
+        });
+        return;
+      }
+
+      // Create new room
+      const newRoom = createNewRoom(roomId, roomName, roomDescription, socket, language);
+
+      // Add creator to room as leader
+      addPlayerToRoom(socket, roomId);
+
+      // Join socket room
+      socket.join(roomId);
+      connectedUsers[socket.id].roomId = roomId;
+
+      // Send success response to the creator
+      socket.emit('room_created', {
+        success: true,
+        roomId: roomId,
+        room: newRoom,
+        message: `Successfully created and joined ${newRoom.name}`,
+        isLeader: true
+      });
+
+      console.log(`🎯 User ${socket.user.name} created and joined room ${roomId}`);
+      
+    } catch (error) {
+      console.error('Error creating room:', error);
+      socket.emit('room_create_error', {
+        success: false,
+        message: 'Failed to create room',
         error: error.message
       });
     }
@@ -899,6 +972,161 @@ app.get('/api/elements/initial-audio/:languageCode', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching initial elements audio:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Check room validity endpoint
+app.get('/api/rooms/:roomId/check', (req, res) => {
+  try {
+    const roomId = req.params.roomId;
+    
+    if (!roomId) {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Room ID is required' 
+      });
+    }
+
+    const room = rooms[roomId];
+    
+    if (!room) {
+      return res.json({ 
+        valid: false, 
+        message: 'Room does not exist' 
+      });
+    }
+
+    if (room.gameStatus !== 'waiting') {
+      return res.json({ 
+        valid: false, 
+        message: 'Room is not waiting for players' 
+      });
+    }
+
+    res.json({ 
+      valid: true, 
+      message: 'Room is available to join',
+      room: {
+        name: room.name,
+        gameStatus: room.gameStatus,
+        playerCount: Object.keys(room.players).length,
+        language: room.language,
+        createdBy: room.createdBy.userName
+      }
+    });
+  } catch (error) {
+    console.error('Error checking room validity:', error);
+    res.status(500).json({ 
+      valid: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
+// Update user's learned vocabulary with elements from game
+app.post('/api/users/:userId/vocabulary', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { elements, languageCode } = req.body;
+
+    // Verify user is updating their own vocabulary or is admin
+    if (req.user.id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized to update this user\'s vocabulary' });
+    }
+
+    if (!elements || !Array.isArray(elements) || !languageCode) {
+      return res.status(400).json({ error: 'Invalid request body. Expected elements array and languageCode' });
+    }
+
+    console.log(`Updating vocabulary for user ${userId} in language ${languageCode} with ${elements.length} elements`);
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Initialize learnedVocabulary Map if it doesn't exist
+    if (!user.learnedVocabulary) {
+      user.learnedVocabulary = new Map();
+    }
+
+    // Get existing vocabulary for this language or initialize empty array
+    const existingVocabulary = user.learnedVocabulary.get(languageCode) || [];
+    const existingKeys = new Set(existingVocabulary.map(item => item.elementKey));
+
+    // Process each element from the game
+    for (const element of elements) {
+      const { elementKey, element: elementName, en_text, emoji, audio_b64 } = element;
+      
+      // Skip if we already have this element for this language
+      if (existingKeys.has(elementKey)) {
+        continue;
+      }
+
+      // Add new vocabulary item
+      const vocabularyItem = {
+        elementKey,
+        element: elementName,
+        en_text: en_text || elementName, // Fallback to elementName if en_text not provided
+        emoji: emoji || '✨', // Fallback emoji
+        audio_b64: audio_b64 || null,
+        learnedAt: new Date()
+      };
+
+      existingVocabulary.push(vocabularyItem);
+      console.log(`Added new vocabulary: ${elementKey} -> ${elementName} (${languageCode})`);
+    }
+
+    // Update the vocabulary for this language
+    user.learnedVocabulary.set(languageCode, existingVocabulary);
+    
+    // Mark the field as modified for Map types
+    user.markModified('learnedVocabulary');
+    
+    await user.save();
+
+    const addedCount = elements.filter(e => !existingKeys.has(e.elementKey)).length;
+    
+    res.json({ 
+      message: 'Vocabulary updated successfully',
+      addedCount,
+      totalVocabularyCount: existingVocabulary.length,
+      languageCode
+    });
+
+  } catch (error) {
+    console.error('Error updating user vocabulary:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user's learned vocabulary for a specific language
+app.get('/api/users/:userId/vocabulary/:languageCode', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const languageCode = req.params.languageCode;
+
+    // Verify user is accessing their own vocabulary or is admin
+    if (req.user.id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized to access this user\'s vocabulary' });
+    }
+
+    const user = await User.findById(userId).select('learnedVocabulary');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const vocabulary = user.learnedVocabulary?.get(languageCode) || [];
+    
+    res.json({
+      languageCode,
+      vocabulary,
+      count: vocabulary.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching user vocabulary:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -50,46 +50,43 @@ const ElementNotification = ({
       ${visible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-95'}
     `}>
       <Card className={`
-        p-4 shadow-lg border-2 min-w-[280px] max-w-[350px]
+        px-3 py-2 shadow-lg border min-w-[250px] max-w-[320px]
         ${isOwnDiscovery 
           ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800' 
           : 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800'
         }
       `}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Icon */}
           <div className={`
-            flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center
+            flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center
             ${isOwnDiscovery 
               ? 'bg-green-100 dark:bg-green-900' 
               : 'bg-blue-100 dark:bg-blue-900'
             }
           `}>
-            <Sparkles className={`w-5 h-5 ${
+            <Sparkles className={`w-3.5 h-3.5 ${
               isOwnDiscovery ? 'text-green-600' : 'text-blue-600'
             }`} />
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <p className={`text-sm font-medium ${
-                isOwnDiscovery ? 'text-green-800 dark:text-green-200' : 'text-blue-800 dark:text-blue-200'
+            {/* New Element - Main content in one line */}
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-lg">{emoji}</span>
+              <span className="font-bold text-sm text-foreground">{element}</span>
+              <span className={`text-xs font-medium ${
+                isOwnDiscovery ? 'text-green-700 dark:text-green-300' : 'text-blue-700 dark:text-blue-300'
               }`}>
-                {isOwnDiscovery ? 'You discovered!' : `${playerName} discovered!`}
-              </p>
-            </div>
-
-            {/* New Element */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">{emoji}</span>
-              <span className="font-bold text-lg text-foreground">{element}</span>
+                {isOwnDiscovery ? 'discovered!' : `by ${playerName}`}
+              </span>
             </div>
 
             {/* Combination */}
             {combination && (
               <div className="text-xs text-muted-foreground">
-                <Plus className="w-3 h-3 inline mr-1" />
+                <Plus className="w-2.5 h-2.5 inline mr-1" />
                 {combination}
               </div>
             )}
@@ -97,7 +94,7 @@ const ElementNotification = ({
         </div>
 
         {/* Progress bar */}
-        <div className="mt-3 w-full h-1 bg-muted rounded-full overflow-hidden">
+        <div className="mt-1.5 w-full h-0.5 bg-muted rounded-full overflow-hidden">
           <div 
             className={`h-full ${
               isOwnDiscovery ? 'bg-green-500' : 'bg-blue-500'

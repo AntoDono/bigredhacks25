@@ -2,13 +2,16 @@ import { useEffect, useState, useCallback } from 'react';
 import { socketClient } from '@/lib/socket';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api';
 
 interface UseSocketReturn {
   connected: boolean;
   joinRoom: (roomId: string, roomName?: string, roomDescription?: string, language?: string) => void;
+  createRoom: (roomId: string, roomName?: string, roomDescription?: string, language?: string) => void;
   leaveRoom: () => void;
   createElement: (element1: string, element2: string) => void;
   startGame: () => void;
+  checkRoomValidity: (roomId: string) => Promise<{ valid: boolean; message?: string; room?: any }>;
   currentRoom: any;
   roomError: string | null;
   onElementCreated: (callback: (elementData: any) => void) => void;
@@ -60,8 +63,21 @@ export const useSocket = (): UseSocketReturn => {
       toast.success(data.message);
     };
 
+    const handleRoomCreated = (data: any) => {
+      console.log('Created room:', data);
+      setCurrentRoom({ ...data.room, isLeader: data.isLeader });
+      setRoomError(null);
+      toast.success(data.message);
+    };
+
     const handleRoomJoinError = (data: any) => {
       console.error('Room join error:', data);
+      setRoomError(data.message);
+      // Don't show toast here - let the component handle it
+    };
+
+    const handleRoomCreateError = (data: any) => {
+      console.error('Room create error:', data);
       setRoomError(data.message);
       toast.error(data.message);
     };
@@ -89,7 +105,6 @@ export const useSocket = (): UseSocketReturn => {
         case 'endgame':
           // Handle winner endgame event (sent via message_response to winner)
           console.log('Winner endgame event received:', data);
-          setGameEvent(data);
           break;
         default:
           if (data.success) {
@@ -185,7 +200,9 @@ export const useSocket = (): UseSocketReturn => {
 
     // Register event listeners
     socketClient.onRoomJoined(handleRoomJoined);
+    socketClient.onRoomCreated(handleRoomCreated);
     socketClient.onRoomJoinError(handleRoomJoinError);
+    socketClient.onRoomCreateError(handleRoomCreateError);
     socketClient.onMessageResponse(handleMessageResponse);
     socketClient.onMessageBroadcast(handleMessageBroadcast);
     socketClient.onMessageError(handleMessageError);
@@ -195,7 +212,9 @@ export const useSocket = (): UseSocketReturn => {
     // Cleanup function
     return () => {
       socketClient.off('room_joined', handleRoomJoined);
+      socketClient.off('room_created', handleRoomCreated);
       socketClient.off('room_join_error', handleRoomJoinError);
+      socketClient.off('room_create_error', handleRoomCreateError);
       socketClient.off('message_response', handleMessageResponse);
       socketClient.off('message_broadcast', handleMessageBroadcast);
       socketClient.off('message_error', handleMessageError);
@@ -213,6 +232,16 @@ export const useSocket = (): UseSocketReturn => {
 
     setRoomError(null);
     socketClient.joinRoom({ roomId, roomName, roomDescription, language });
+  }, [connected]);
+
+  const createRoom = useCallback((roomId: string, roomName?: string, roomDescription?: string, language?: string) => {
+    if (!connected) {
+      toast.error('Not connected to game server');
+      return;
+    }
+
+    setRoomError(null);
+    socketClient.createRoom({ roomId, roomName, roomDescription, language });
   }, [connected]);
 
   const leaveRoom = useCallback(() => {
@@ -242,6 +271,17 @@ export const useSocket = (): UseSocketReturn => {
     socketClient.startGame();
   }, [connected]);
 
+  const checkRoomValidity = useCallback(async (roomId: string): Promise<{ valid: boolean; message?: string; room?: any }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/check`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error checking room validity:', error);
+      return { valid: false, message: 'Failed to check room validity' };
+    }
+  }, []);
+
   // Callback functions for Battle component
   const onElementCreated = useCallback((callback: (elementData: any) => void) => {
     socketClient.instance?.on('message_response', (data: any) => {
@@ -270,9 +310,11 @@ export const useSocket = (): UseSocketReturn => {
   return {
     connected,
     joinRoom,
+    createRoom,
     leaveRoom,
     createElement,
     startGame,
+    checkRoomValidity,
     currentRoom,
     roomError,
     onElementCreated,

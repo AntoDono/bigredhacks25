@@ -15,7 +15,7 @@ import GameOverlay from "@/components/notifications/GameOverlay";
 import ElementNotification from "@/components/notifications/ElementNotification";
 import SpeechRecognitionModal from "@/components/battle/SpeechRecognitionModal";
 import { playBase64Audio } from "@/lib/utils";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, api } from "@/lib/api";
 import { GAME_CONFIG } from "@/lib/gameConfig";
 
 // Default basic elements for the battle (fallback)
@@ -37,7 +37,7 @@ const Battle = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, token } = useAuth();
   const { 
     connected, 
     joinRoom, 
@@ -45,6 +45,7 @@ const Battle = () => {
     createElement, 
     startGame, 
     currentRoom,
+    roomError,
     onElementCreated,
     onGameEvent,
     offElementCreated,
@@ -62,7 +63,7 @@ const Battle = () => {
   const [playerWon, setPlayerWon] = useState(false);
   const [roomJoined, setRoomJoined] = useState(false);
   const [isRoomCreator, setIsRoomCreator] = useState(false);
-  const [showLobby, setShowLobby] = useState(false);
+  const [showLobby, setShowLobby] = useState(true); // Start with lobby visible for room creators
   const [showGameOverlay, setShowGameOverlay] = useState(false);
   const [gameOverlayData, setGameOverlayData] = useState<any>(null);
   const [elementNotifications, setElementNotifications] = useState<any[]>([]);
@@ -92,24 +93,54 @@ const Battle = () => {
       const roomDescription = `Real-time battle room`;
       joinRoom(roomCode, roomName, roomDescription, language);
       setRoomJoined(true);
+      const isCreator = location.state?.isCreator || false;
+      console.log(`Attempting to join room ${roomCode} with language ${language}, isCreator: ${isCreator}`);
       
-      // Fetch language-specific initial elements
-      fetchInitialElements(language);
+      // If user is not the creator, hide lobby initially
+      if (!isCreator) {
+        setShowLobby(false);
+      }
+      
+      try {
+        // @ts-ignore - joinRoom accepts 4 parameters including language
+        joinRoom(roomCode, `Battle Room ${roomCode}`, `Real-time battle room`, language);
+        setRoomJoined(true);
+        
+        // Fetch language-specific initial elements
+        fetchInitialElements(language);
+      } catch (error) {
+        console.error('Error joining room:', error);
+        toast.error('Failed to join room');
+      }
     }
   }, [connected, roomCode, roomJoined, joinRoom, location.state]);
+
+  // Handle room join errors - show error but don't navigate since validation was done in Home
+  useEffect(() => {
+    if (roomError) {
+      toast.error(`Room error: ${roomError}`);
+      // Don't navigate back to home since the user should already be in a valid room
+      // The error might be temporary (network issues, etc.)
+    }
+  }, [roomError]);
 
   // Update room info when currentRoom changes
   useEffect(() => {
     if (currentRoom) {
+      console.log('Current room data:', currentRoom);
       setTargetWord(currentRoom.target_element || "Unknown");
       setIsActive(currentRoom.gameStatus === 'active');
       setGameEnded(currentRoom.gameStatus === 'ended');
       
       // Check if current user is the room creator
-      setIsRoomCreator(currentRoom.createdBy?.userId === user?.id);
+      const isCreator = currentRoom.createdBy?.userId === user?.id;
+      setIsRoomCreator(isCreator);
+      console.log('Is room creator:', isCreator);
       
       // Show lobby if game is waiting, hide when game starts or ends
-      setShowLobby(currentRoom.gameStatus === 'waiting');
+      const shouldShowLobby = currentRoom.gameStatus === 'waiting';
+      console.log('Game status:', currentRoom.gameStatus, 'Should show lobby:', shouldShowLobby);
+      setShowLobby(shouldShowLobby);
       
       if (currentRoom.gameStatus === 'active' && currentRoom.startedAt) {
         // Calculate time left based on start time
@@ -493,6 +524,75 @@ const Battle = () => {
   const displayGameOverlay = (type: 'victory' | 'defeat' | 'timeup', data: any) => {
     setGameOverlayData({ type, ...data });
     setShowGameOverlay(true);
+
+    // Update user's learned vocabulary when game ends
+    updateUserVocabulary();
+  };
+
+  // Update user's learned vocabulary with all elements from the game
+  const updateUserVocabulary = async () => {
+    if (!user?.id || !token) {
+      console.warn('No user or token available for vocabulary update');
+      return;
+    }
+
+    try {
+      // Get current language from location state or default to en-US
+      const languageCode = location.state?.language || 'en-US';
+      
+      // Collect all elements from the game (discoveries + available elements)
+      const allElements: any[] = [];
+      
+      // Add discoveries with their audio data
+      discoveries.forEach(element => {
+        const elementEnText = (element as any).en_text;
+        const elementKey = elementEnText || element.text.toLowerCase().replace(/\s+/g, '_');
+        const audioB64 = elementAudio.get(element.text.toLowerCase()) || 
+                         elementAudio.get(elementKey.toLowerCase()) || null;
+        
+        allElements.push({
+          elementKey,
+          element: element.text,
+          en_text: elementEnText || element.text,
+          emoji: element.emoji,
+          audio_b64: audioB64
+        });
+      });
+
+      // Add initial/available elements with their audio data
+      availableElements.forEach(element => {
+        const elementEnText = (element as any).en_text;
+        const elementKey = elementEnText || element.text.toLowerCase().replace(/\s+/g, '_');
+        const audioB64 = elementAudio.get(element.text.toLowerCase()) || 
+                         elementAudio.get(elementKey.toLowerCase()) || 
+                         elementAudio.get(element.id?.toLowerCase()) || null;
+        
+        // Check if not already added from discoveries
+        if (!allElements.find(e => e.elementKey === elementKey)) {
+          allElements.push({
+            elementKey,
+            element: element.text,
+            en_text: elementEnText || element.text,
+            emoji: element.emoji,
+            audio_b64: audioB64
+          });
+        }
+      });
+
+      console.log(`Updating vocabulary with ${allElements.length} elements for language ${languageCode}`);
+      
+      const result = await api.updateUserVocabulary(user.id, allElements, languageCode, token);
+      
+      if (result.addedCount > 0) {
+        toast.success(`Added ${result.addedCount} new words to your ${languageCode} vocabulary!`);
+      }
+      
+      console.log(`Vocabulary update complete: ${result.addedCount} new words added, ${result.totalVocabularyCount} total`);
+
+    } catch (error) {
+      console.error('Failed to update vocabulary:', error);
+      // Don't show error toast to user as this is background functionality
+    }
   };
 
   // Handle successful speech recognition
@@ -577,45 +677,35 @@ const Battle = () => {
     return null; // Will redirect to login
   }
 
+  // Debug logging
+  console.log('Battle render - showLobby:', showLobby, 'currentRoom:', currentRoom, 'isRoomCreator:', isRoomCreator);
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/home')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/home')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
             <div>
               <h1 className="text-2xl font-bold">Battle Room: {roomCode}</h1>
               <p className="text-muted-foreground">Player vs Player</p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-4">
+            
             <Card className="px-4 py-2">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-primary" />
                 <span className="font-medium">Target: {targetWord}</span>
               </div>
             </Card>
-            
-            {/* Game Start Button for Room Creator */}
-            {isRoomCreator && currentRoom?.gameStatus === 'waiting' && (
-              <Button 
-                onClick={handleStartGame}
-                className="btn-hero"
-                disabled={!connected}
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Start Game
-              </Button>
-            )}
             
             {/* Game Status Indicator */}
             <Card className="px-3 py-2 shadow-soft hover:shadow-medium transition-shadow duration-200">
@@ -627,6 +717,20 @@ const Battle = () => {
                 <span className="text-sm capitalize font-medium">{currentRoom?.gameStatus || 'connecting'}</span>
               </div>
             </Card>
+          </div>
+
+          {/* Game Start Button for Room Creator - positioned on the right */}
+          <div className="ml-auto">
+            {isRoomCreator && currentRoom?.gameStatus === 'waiting' && (
+              <Button 
+                onClick={handleStartGame}
+                className="btn-hero"
+                disabled={!connected}
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Start Game
+              </Button>
+            )}
           </div>
         </div>
 
