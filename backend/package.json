@@ -11,10 +11,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "groq-sdk": "^0.32.0",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "jsonwebtoken": "^9.0.2"
   }
 }
