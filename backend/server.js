@@ -976,6 +976,54 @@ app.get('/api/elements/initial-audio/:languageCode', async (req, res) => {
   }
 });
 
+// Check room validity endpoint
+app.get('/api/rooms/:roomId/check', (req, res) => {
+  try {
+    const roomId = req.params.roomId;
+    
+    if (!roomId) {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Room ID is required' 
+      });
+    }
+
+    const room = rooms[roomId];
+    
+    if (!room) {
+      return res.json({ 
+        valid: false, 
+        message: 'Room does not exist' 
+      });
+    }
+
+    if (room.gameStatus !== 'waiting') {
+      return res.json({ 
+        valid: false, 
+        message: 'Room is not waiting for players' 
+      });
+    }
+
+    res.json({ 
+      valid: true, 
+      message: 'Room is available to join',
+      room: {
+        name: room.name,
+        gameStatus: room.gameStatus,
+        playerCount: Object.keys(room.players).length,
+        language: room.language,
+        createdBy: room.createdBy.userName
+      }
+    });
+  } catch (error) {
+    console.error('Error checking room validity:', error);
+    res.status(500).json({ 
+      valid: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
 // Start server
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

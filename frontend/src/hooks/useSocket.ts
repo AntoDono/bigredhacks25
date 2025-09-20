@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { socketClient } from '@/lib/socket';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '@/lib/api';
 
 interface UseSocketReturn {
   connected: boolean;
@@ -10,6 +11,7 @@ interface UseSocketReturn {
   leaveRoom: () => void;
   createElement: (element1: string, element2: string) => void;
   startGame: () => void;
+  checkRoomValidity: (roomId: string) => Promise<{ valid: boolean; message?: string; room?: any }>;
   currentRoom: any;
   roomError: string | null;
   onElementCreated: (callback: (elementData: any) => void) => void;
@@ -269,6 +271,17 @@ export const useSocket = (): UseSocketReturn => {
     socketClient.startGame();
   }, [connected]);
 
+  const checkRoomValidity = useCallback(async (roomId: string): Promise<{ valid: boolean; message?: string; room?: any }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/check`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error checking room validity:', error);
+      return { valid: false, message: 'Failed to check room validity' };
+    }
+  }, []);
+
   // Callback functions for Battle component
   const onElementCreated = useCallback((callback: (elementData: any) => void) => {
     socketClient.instance?.on('message_response', (data: any) => {
@@ -301,6 +314,7 @@ export const useSocket = (): UseSocketReturn => {
     leaveRoom,
     createElement,
     startGame,
+    checkRoomValidity,
     currentRoom,
     roomError,
     onElementCreated,

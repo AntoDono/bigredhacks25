@@ -15,12 +15,13 @@ import logo from "../assets/logo.png";
 const Home = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
-  const { connected, createRoom, currentRoom } = useSocket();
+  const { connected, createRoom, currentRoom, checkRoomValidity } = useSocket();
   const [roomCode, setRoomCode] = useState("");
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [generatedCode, setGeneratedCode] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("en-US");
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [isCheckingRoom, setIsCheckingRoom] = useState(false);
 
   // Available languages for TTS
   const languages = [
@@ -76,22 +77,59 @@ const Home = () => {
     );
   };
 
-
-
-  const joinRoom = () => {
+  const joinRoom = async () => {
     if (roomCode.length < 7) {
       toast.error("Please enter a valid room code (XXX-XXX)");
       return;
     }
-    navigate(`/battle/${roomCode}`);
+
+    setIsCheckingRoom(true);
+    try {
+      const result = await checkRoomValidity(roomCode);
+      
+      if (result.valid) {
+        // Room is valid, navigate to battle page
+        navigate(`/battle/${roomCode}`, { 
+          state: { 
+            language: result.room?.language || 'en-US',
+            isCreator: false 
+          } 
+        });
+      } else {
+        // Room is not valid, show error
+        toast.error(result.message || "Cannot join room");
+      }
+    } catch (error) {
+      console.error('Error checking room:', error);
+      toast.error("Failed to check room validity");
+    } finally {
+      setIsCheckingRoom(false);
+    }
   };
 
-  const spectateRoom = () => {
+  const spectateRoom = async () => {
     if (roomCode.length < 7) {
       toast.error("Please enter a valid room code (XXX-XXX)");
       return;
     }
-    navigate(`/spectate/${roomCode}`);
+
+    setIsCheckingRoom(true);
+    try {
+      const result = await checkRoomValidity(roomCode);
+      
+      if (result.valid) {
+        // Room is valid, navigate to spectate page
+        navigate(`/spectate/${roomCode}`);
+      } else {
+        // Room is not valid, show error
+        toast.error(result.message || "Cannot spectate room");
+      }
+    } catch (error) {
+      console.error('Error checking room:', error);
+      toast.error("Failed to check room validity");
+    } finally {
+      setIsCheckingRoom(false);
+    }
   };
 
   const copyRoomCode = () => {
@@ -268,19 +306,19 @@ const Home = () => {
                   <Button 
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={joinRoom}
-                    disabled={roomCode.length < 7}
+                    disabled={roomCode.length < 7 || isCheckingRoom}
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    Join
+                    {isCheckingRoom ? "Checking..." : "Join"}
                   </Button>
                   <Button 
                     variant="outline"
                     onClick={spectateRoom}
-                    disabled={roomCode.length < 7}
+                    disabled={roomCode.length < 7 || isCheckingRoom}
                     className="border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    Spectate
+                    {isCheckingRoom ? "Checking..." : "Spectate"}
                   </Button>
                 </div>
               </CardContent>

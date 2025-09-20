@@ -74,14 +74,6 @@ const Battle = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Handle room join errors - navigate back to home if room doesn't exist
-  useEffect(() => {
-    if (roomError) {
-      toast.error(`Room error: ${roomError}`);
-      navigate('/home');
-    }
-  }, [roomError, navigate]);
-
   // Join room when component mounts and socket is connected
   useEffect(() => {
     if (connected && roomCode && !roomJoined) {
@@ -107,6 +99,15 @@ const Battle = () => {
       }
     }
   }, [connected, roomCode, roomJoined, joinRoom, location.state]);
+
+  // Handle room join errors - show error but don't navigate since validation was done in Home
+  useEffect(() => {
+    if (roomError) {
+      toast.error(`Room error: ${roomError}`);
+      // Don't navigate back to home since the user should already be in a valid room
+      // The error might be temporary (network issues, etc.)
+    }
+  }, [roomError]);
 
   // Update room info when currentRoom changes
   useEffect(() => {
