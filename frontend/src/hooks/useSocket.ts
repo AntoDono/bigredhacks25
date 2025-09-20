@@ -192,14 +192,14 @@ export const useSocket = (): UseSocketReturn => {
   }, [connected, currentRoom]);
 
   // Socket methods
-  const joinRoom = useCallback((roomId: string, roomName?: string, roomDescription?: string) => {
+  const joinRoom = useCallback((roomId: string, roomName?: string, roomDescription?: string, language?: string) => {
     if (!connected) {
       toast.error('Not connected to game server');
       return;
     }
     
     setRoomError(null);
-    socketClient.joinRoom({ roomId, roomName, roomDescription });
+    socketClient.joinRoom({ roomId, roomName, roomDescription, language });
   }, [connected]);
 
   const createElement = useCallback((element1: string, element2: string) => {
@@ -224,6 +224,7 @@ export const useSocket = (): UseSocketReturn => {
   const onElementCreated = useCallback((callback: (elementData: any) => void) => {
     socketClient.instance?.on('message_response', (data: any) => {
       if (data.type === 'create-element' && data.success) {
+        // Pass the full response data so Battle component can access audio_b64
         callback(data.data);
       } else if (data.type === 'endgame') {
         // Pass the entire endgame event to the callback

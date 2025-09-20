@@ -34,7 +34,7 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
   const renderElement = (element: Element) => (
     <div
       key={element.id}
-      className="discovery-item cursor-grab active:cursor-grabbing inline-flex items-center gap-1 px-2 py-1 m-1 rounded-full border bg-card hover:bg-accent hover:text-accent-foreground transition-colors text-xs"
+      className="discovery-item cursor-grab active:cursor-grabbing inline-flex items-center gap-1 px-2 py-1 m-1 rounded-full border border-border/50 bg-card hover:bg-muted hover:border-primary/50 transition-all duration-200 text-xs shadow-soft hover:shadow-medium"
       draggable
       onDragStart={(e) => handleDragStart(e, element)}
       title={element.text} // Show full text on hover
@@ -45,10 +45,12 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
   );
 
   return (
-    <Card className="h-full flex flex-col min-h-[600px] max-h-[600px]">
+    <Card className="h-full flex flex-col min-h-[600px] max-h-[600px] shadow-medium hover:shadow-large transition-shadow duration-300">
       <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-lg flex items-center gap-2">
-          <Package className="w-5 h-5" />
+          <div className="p-1 rounded-lg bg-gradient-primary shadow-soft">
+            <Package className="w-4 h-4 text-white" />
+          </div>
           Elements
         </CardTitle>
         <div className="relative">
@@ -57,7 +59,7 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
             placeholder="Search elements..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-9"
+            className="pl-10 h-9 border-border/50 focus:border-primary shadow-soft"
           />
         </div>
       </CardHeader>
@@ -92,9 +94,9 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
               <div className="flex flex-wrap gap-1">
                 {discoveries.length > 0 ? (
                   discoveries.map((element) => (
-                    <div key={element.id} className="relative">
+                      <div key={element.id} className="relative">
                       {renderElement(element)}
-                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse shadow-soft" />
                     </div>
                   ))
                 ) : (
@@ -111,10 +113,10 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
       </CardContent>
 
       {/* Quick Stats */}
-      <div className="border-t p-3 flex-shrink-0">
+      <div className="border-t border-border/50 p-3 flex-shrink-0 bg-muted/20">
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>{availableElements.length} Total</span>
-          <span>{discoveries.length} Discovered</span>
+          <span className="font-medium">{availableElements.length} Total</span>
+          <span className="font-medium">{discoveries.length} Discovered</span>
         </div>
       </div>
     </Card>

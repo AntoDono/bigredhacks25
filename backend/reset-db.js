@@ -1,5 +1,7 @@
 const mongoose = require('./db.js');
-const { ElementCache } = require('./schema.js');
+const { ElementCache, InitialElementsAudio } = require('./schema.js');
+const { textToSpeech } = require('./tts.js');
+const { getSupportedLanguages, getElementName, INITIAL_ELEMENTS_CONFIG } = require('./languages.js');
 
 // Basic element combinations to seed the database
 const basicCombinations = [
@@ -42,6 +44,22 @@ const basicCombinations = [
     { element1: 'stone', element2: 'pressure', result: { element: 'Diamond', emoji: '💎' } }
 ];
 
+/**
+ * Generate audio for an element in a specific language
+ * @param {string} elementName - Name of the element
+ * @param {string} languageCode - Language code
+ * @returns {Promise<string|null>} - Base64 audio or null if failed
+ */
+async function generateAudioForElement(elementName, languageCode) {
+  try {
+    const audio = await textToSpeech(languageCode, elementName);
+    return audio;
+  } catch (error) {
+    console.warn(`   ⚠️  Failed to generate audio for "${elementName}" in ${languageCode}:`, error.message);
+    return null;
+  }
+}
+
 async function resetElementCache() {
   try {
     console.log('🗑️  Clearing element cache...');
@@ -50,26 +68,91 @@ async function resetElementCache() {
     const deleteResult = await ElementCache.deleteMany({});
     console.log(`   Deleted ${deleteResult.deletedCount} cached elements`);
     
-    console.log('💾 Injecting basic element combinations...');
+    // Clear initial elements audio
+    const deleteAudioResult = await InitialElementsAudio.deleteMany({});
+    console.log(`   Deleted ${deleteAudioResult.deletedCount} initial element audio entries`);
     
-    // Insert basic combinations
+    console.log('💾 Injecting basic element combinations with multilingual audio...');
+    
+    const supportedLanguages = getSupportedLanguages();
+    console.log(`   🌍 Generating audio for ${supportedLanguages.length} languages: ${supportedLanguages.join(', ')}`);
+    
+    // Insert basic combinations for each language
     for (const combo of basicCombinations) {
-      // Normalize the element names (lowercase and sorted)
-      const [first, second] = [combo.element1.toLowerCase(), combo.element2.toLowerCase()].sort();
       
-      const cacheEntry = new ElementCache({
-        element1: first,
-        element2: second,
-        result: combo.result
-      });
-      
-      await cacheEntry.save();
-      console.log(`   ✅ ${first} + ${second} = ${combo.result.element} ${combo.result.emoji}`);
+      // For each supported language, create a cache entry with English element names but translated results
+      for (const languageCode of supportedLanguages) {
+        try {
+          // Use English element names for cache keys (for consistency across languages)
+          const [first, second] = [combo.element1.toLowerCase(), combo.element2.toLowerCase()].sort();
+          
+          // Get translated result element name
+          const translatedResult = getElementName(combo.result.element.toLowerCase(), languageCode);
+          
+          // Generate audio for the result element in this language
+          console.log(`   🎵 Generating audio for "${translatedResult}" (${languageCode})...`);
+          const audioB64 = await generateAudioForElement(translatedResult, languageCode);
+          
+          // Create result with translated name and audio
+          const result = {
+            element: translatedResult, // Use translated name
+            en_text: combo.result.element, // Keep original English name for target matching
+            emoji: combo.result.emoji,
+            audio_b64: audioB64
+          };
+          
+          const cacheEntry = new ElementCache({
+            element1: first,
+            element2: second,
+            result: result,
+            languageCode: languageCode
+          });
+          
+          await cacheEntry.save();
+          
+          const audioStatus = audioB64 ? '🔊' : '🔇';
+          console.log(`   ✅ [${languageCode}] ${first} + ${second} = ${translatedResult} ${combo.result.emoji} ${audioStatus}`);
+          
+        } catch (error) {
+          console.error(`   ❌ Failed to create cache entry for ${languageCode}:`, error.message);
+        }
+      }
     }
     
-    console.log(`\n🎉 Successfully reset database with ${basicCombinations.length} basic combinations!`);
+    const totalEntries = basicCombinations.length * supportedLanguages.length;
+    console.log(`\n🎉 Successfully reset database with ${totalEntries} multilingual combinations!`);
+    console.log(`   📊 ${basicCombinations.length} combinations × ${supportedLanguages.length} languages`);
+    
+    // Generate audio for initial elements
+    console.log('\n🎵 Generating audio for initial elements...');
+    
+    for (const languageCode of supportedLanguages) {
+      for (const element of INITIAL_ELEMENTS_CONFIG) {
+        try {
+          const translatedName = getElementName(element.id, languageCode);
+          const audioB64 = await generateAudioForElement(translatedName, languageCode);
+          
+          const audioEntry = new InitialElementsAudio({
+            elementKey: element.id,
+            languageCode: languageCode,
+            elementName: translatedName,
+            audio_b64: audioB64
+          });
+          
+          await audioEntry.save();
+          
+          const audioStatus = audioB64 ? '🔊' : '🔇';
+          console.log(`   ✅ [${languageCode}] ${element.id} → ${translatedName} ${audioStatus}`);
+          
+        } catch (error) {
+          console.error(`   ❌ Failed to create audio for ${element.id} in ${languageCode}:`, error.message);
+        }
+      }
+    }
+    
     console.log('\nBasic starter elements available:');
     console.log('   🔥 Fire    💧 Water    🌍 Earth    💨 Air');
+    console.log('   🪓 Axe     ⛏️  Pickaxe  🔬 Stemcell 🌳 Tree    🪨 Stone');
     
   } catch (error) {
     console.error('❌ Error resetting database:', error);

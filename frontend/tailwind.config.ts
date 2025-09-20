@@ -85,6 +85,15 @@ export default {
       scale: {
         '102': '1.02',
       },
+      // Enhanced shadow system
+      boxShadow: {
+        'soft': '0 2px 8px -2px hsl(214 100% 25% / 0.1)',
+        'medium': '0 4px 16px -4px hsl(214 100% 25% / 0.15)',
+        'large': '0 8px 24px -6px hsl(214 100% 25% / 0.2)',
+        'glow': '0 0 20px hsl(210 100% 50% / 0.4)',
+        'card': '0 4px 20px -2px hsl(210 100% 50% / 0.1)',
+        'battle': '0 8px 30px -4px hsl(214 100% 25% / 0.2)',
+      },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",

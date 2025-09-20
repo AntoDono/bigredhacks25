@@ -4,7 +4,7 @@ import { API_BASE_URL } from './api';
 // Socket event types
 export interface SocketEvents {
   // Client to server
-  'join_room': (data: { roomId: string; roomName?: string; roomDescription?: string }) => void;
+  'join_room': (data: { roomId: string; roomName?: string; roomDescription?: string; language?: string }) => void;
   'message': (data: { type: string; data: any }) => void;
 
   // Server to client
@@ -34,6 +34,7 @@ export interface RoomJoinData {
   roomId: string;
   roomName?: string;
   roomDescription?: string;
+  language?: string;
 }
 
 export interface PlayerStats {
@@ -54,7 +55,10 @@ export interface ElementCreationResponse {
   message: string;
   data: {
     element: string;
+    en_text?: string;
+    emoji: string;
     combination: string;
+    audio_b64?: string;
     roomStats?: RoomStats;
     gameStatus?: 'waiting' | 'active' | 'ended';
     winner?: string;

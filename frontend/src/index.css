@@ -2,64 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Duelingo Design System - Language Learning Battle Game */
+/* Duelingo Design System - DigitalOcean Blue Theme */
 
 @layer base {
   :root {
-    /* Core Background & Text */
-    --background: 210 20% 98%;
-    --foreground: 220 15% 15%;
+    /* Core Background & Text - DigitalOcean Blue Palette */
+    --background: 214 100% 97%; /* Very light blue #f0f7ff */
+    --foreground: 214 100% 25%; /* Deep navy #003d82 */
 
     /* Card System */
-    --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
+    --card: 0 0% 100%; /* Pure white for clean cards */
+    --card-foreground: 214 100% 25%; /* Deep navy #003d82 */
 
     /* Interactive Elements */
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
+    --popover-foreground: 214 100% 25%;
 
-    /* Brand Colors - Language Learning Theme */
-    --primary: 140 85% 45%; /* Vibrant Green */
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 140 70% 55%;
+    /* Brand Colors - DigitalOcean Blue Theme */
+    --primary: 210 100% 50%; /* Bright blue #0080ff */
+    --primary-foreground: 0 0% 100%; /* White for contrast */
+    --primary-glow: 210 100% 60%; /* Lighter variant */
 
-    --secondary: 200 95% 55%; /* Learning Blue */
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 218 100% 83%; /* Light blue #a7c5ff */
+    --secondary-foreground: 214 100% 25%; /* Deep navy for contrast */
     
-    --accent: 280 90% 65%; /* Creative Purple */
-    --accent-foreground: 0 0% 100%;
+    --accent: 214 100% 25%; /* Deep navy #003d82 */
+    --accent-foreground: 0 0% 100%; /* White for contrast */
 
-    /* Battle System Colors */
-    --battle: 25 95% 60%; /* Energy Orange */
+    /* Battle System Colors - Blue energy theme */
+    --battle: 214 100% 25%; /* Deep navy for battle theme */
     --battle-foreground: 0 0% 100%;
 
-    --success: 140 85% 45%;
+    --success: 140 70% 45%; /* Green */
     --success-foreground: 0 0% 100%;
 
-    --warning: 45 95% 60%;
+    --warning: 45 90% 60%; /* Orange */
     --warning-foreground: 0 0% 100%;
 
-    /* Neutral Tones */
-    --muted: 210 15% 95%;
-    --muted-foreground: 220 10% 45%;
+    /* Neutral Tones - Blue spectrum */
+    --muted: 218 100% 90%; /* Very light blue */
+    --muted-foreground: 214 100% 35%; /* Lighter navy */
 
-    --destructive: 0 85% 60%;
+    --destructive: 0 70% 60%; /* Red */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 88%;
-    --input: 210 20% 94%;
-    --ring: 140 85% 45%;
+    --border: 218 100% 85%; /* Light blue for borders */
+    --input: 218 100% 95%; /* Very light blue for inputs */
+    --ring: 210 100% 50%; /* Bright blue #0080ff */
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-battle: linear-gradient(135deg, hsl(var(--battle)), hsl(var(--accent)));
-    --gradient-learning: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--accent)));
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)));
+    /* Gradients - DigitalOcean Blue Theme */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 50%), hsl(218 100% 83%));
+    --gradient-secondary: linear-gradient(135deg, hsl(218 100% 83%), hsl(214 100% 25%));
+    --gradient-accent: linear-gradient(135deg, hsl(214 100% 25%), hsl(210 100% 50%));
+    --gradient-hero: linear-gradient(135deg, hsl(214 100% 25%), hsl(210 100% 50%), hsl(218 100% 83%));
+    --gradient-subtle: linear-gradient(135deg, hsl(214 100% 97%), hsl(218 100% 90%));
+    --gradient-battle: linear-gradient(135deg, hsl(214 100% 25%), hsl(210 100% 50%));
+    --gradient-learning: linear-gradient(135deg, hsl(218 100% 83%), hsl(214 100% 25%));
 
-    /* Shadows & Effects */
-    --shadow-card: 0 4px 20px -2px hsl(var(--primary) / 0.1);
-    --shadow-battle: 0 8px 30px -4px hsl(var(--battle) / 0.2);
-    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.3);
+    /* Shadows & Effects - DigitalOcean Blue Theme */
+    --shadow-card: 0 4px 20px -2px hsl(210 100% 50% / 0.15);
+    --shadow-battle: 0 8px 30px -4px hsl(214 100% 25% / 0.2);
+    --shadow-glow: 0 0 40px hsl(210 100% 50% / 0.4);
+    --shadow-soft: 0 2px 12px -2px hsl(214 100% 25% / 0.1);
+    --shadow-medium: 0 4px 16px -4px hsl(214 100% 25% / 0.15);
+    --shadow-large: 0 8px 24px -6px hsl(214 100% 25% / 0.2);
 
     /* Animations & Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -68,44 +74,45 @@
 
     --radius: 1rem;
 
-    /* Battle Canvas */
-    --canvas-bg: 210 25% 96%;
-    --canvas-grid: 210 20% 90%;
-    --element-hover: 210 30% 92%;
+    /* Battle Canvas - DigitalOcean Blue Theme */
+    --canvas-bg: 214 100% 97%; /* Very light blue background */
+    --canvas-grid: 218 100% 90%; /* Light blue grid lines */
+    --element-hover: 218 100% 88%; /* Slightly darker light blue on hover */
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar - DigitalOcean Blue Theme */
+    --sidebar-background: 0 0% 100%; /* Pure white sidebar background */
+    --sidebar-foreground: 214 100% 25%; /* Deep navy text */
+    --sidebar-primary: 210 100% 50%; /* Bright blue for primary elements */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text on primary */
+    --sidebar-accent: 218 100% 90%; /* Very light blue for accents */
+    --sidebar-accent-foreground: 214 100% 25%; /* Deep navy text on accents */
+    --sidebar-border: 218 100% 85%; /* Light blue borders */
+    --sidebar-ring: 210 100% 50%; /* Bright blue focus rings */
   }
 
   .dark {
-    /* Dark mode overrides for battle game */
-    --background: 220 20% 8%;
-    --foreground: 210 40% 95%;
-    --card: 220 20% 12%;
-    --card-foreground: 210 40% 95%;
-    --popover: 220 20% 12%;
-    --popover-foreground: 210 40% 95%;
-    --muted: 220 15% 18%;
-    --muted-foreground: 210 15% 65%;
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --canvas-bg: 220 20% 10%;
-    --canvas-grid: 220 15% 15%;
-    --element-hover: 220 20% 18%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Dark mode overrides - DigitalOcean Dark Blue Theme */
+    --background: 214 100% 8%; /* Very dark navy */
+    --foreground: 214 100% 95%; /* Very light blue */
+    --card: 214 100% 12%; /* Dark navy cards */
+    --card-foreground: 214 100% 95%; /* Light blue text */
+    --popover: 214 100% 12%; /* Dark navy popovers */
+    --popover-foreground: 214 100% 95%; /* Light blue text */
+    --muted: 214 100% 18%; /* Darker navy for muted backgrounds */
+    --muted-foreground: 214 100% 70%; /* Medium blue for muted text */
+    --border: 214 100% 20%; /* Dark navy borders */
+    --input: 214 100% 20%; /* Dark navy inputs */
+    --canvas-bg: 214 100% 10%; /* Very dark navy canvas */
+    --canvas-grid: 214 100% 15%; /* Slightly lighter navy grid */
+    --element-hover: 214 100% 18%; /* Dark navy hover state */
+    --sidebar-background: 214 100% 10%; /* Dark navy sidebar */
+    --sidebar-foreground: 214 100% 95%; /* Light blue text */
+    --sidebar-primary: 210 100% 50%; /* Keep bright blue primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text on primary */
+    --sidebar-accent: 214 100% 18%; /* Dark navy accents */
+    --sidebar-accent-foreground: 214 100% 95%; /* Light blue text on accents */
+    --sidebar-border: 214 100% 20%; /* Dark navy borders */
+    --sidebar-ring: 210 100% 50%; /* Bright blue focus rings */
   }
 }
 
@@ -120,26 +127,26 @@
 }
 
 @layer components {
-  /* Hero Button Variants */
+  /* Enhanced Hero Button Variants */
   .btn-hero {
-    @apply bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-glow transition-all duration-300 hover:scale-105;
+    @apply bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold py-5 px-10 rounded-2xl shadow-large hover:shadow-glow transition-all duration-300 hover:scale-105;
   }
 
   .btn-battle {
-    @apply bg-gradient-to-r from-battle to-accent text-battle-foreground font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-battle transition-all duration-200 hover:scale-102;
+    @apply bg-gradient-to-r from-battle to-accent text-battle-foreground font-semibold py-4 px-8 rounded-xl shadow-large hover:shadow-glow transition-all duration-300 hover:scale-105;
   }
 
   .btn-learning {
-    @apply bg-gradient-to-r from-secondary to-accent text-secondary-foreground font-medium py-2 px-4 rounded-lg transition-all duration-200 hover:brightness-110;
+    @apply bg-gradient-to-r from-secondary to-accent text-secondary-foreground font-medium py-3 px-6 rounded-xl transition-all duration-300 hover:brightness-110 hover:scale-105;
   }
 
-  /* Card Animations */
+  /* Enhanced Card Animations */
   .card-float {
-    @apply transition-all duration-300 hover:translate-y-[-8px] hover:shadow-card;
+    @apply transition-all duration-300 hover:translate-y-[-12px] hover:shadow-large;
   }
 
   .card-battle {
-    @apply bg-card border border-border rounded-xl p-6 shadow-card hover:shadow-battle transition-all duration-300;
+    @apply bg-card border-2 border-border rounded-2xl p-8 shadow-large hover:shadow-glow transition-all duration-300 hover:scale-102;
   }
 
   /* Battle Elements */
@@ -176,9 +183,9 @@
     @apply text-destructive animate-bounce;
   }
 
-  /* Room Code Input */
+  /* Enhanced Room Code Input */
   .room-code-input {
-    @apply text-center text-2xl font-mono tracking-widest uppercase;
+    @apply text-center text-2xl lg:text-3xl font-mono tracking-widest uppercase font-bold;
   }
 
   /* Discovery Sidebar */
@@ -188,18 +195,43 @@
 
   /* Learning Story Display */
   .story-word {
-    @apply inline-flex items-center gap-1 bg-accent/20 text-accent-foreground px-2 py-1 rounded-md font-medium;
+    @apply inline-flex items-center gap-1 bg-accent/20 text-accent-foreground px-3 py-2 rounded-lg font-medium shadow-soft hover:shadow-medium transition-all duration-300;
+  }
+
+  /* Enhanced Hover Effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:translate-y-[-4px] hover:shadow-large;
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-glow;
+  }
+
+  .interactive-scale {
+    @apply transition-transform duration-300 hover:scale-105 active:scale-95;
   }
 }
 
 @layer utilities {
-  /* Custom Gradients */
+  /* Custom Gradients - DigitalOcean Blue Theme */
   .bg-gradient-hero {
     background: var(--gradient-hero);
   }
 
   .bg-gradient-primary {
     background: var(--gradient-primary);
+  }
+
+  .bg-gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .bg-gradient-accent {
+    background: var(--gradient-accent);
+  }
+
+  .bg-gradient-subtle {
+    background: var(--gradient-subtle);
   }
 
   .bg-gradient-battle {
@@ -210,7 +242,7 @@
     background: var(--gradient-learning);
   }
 
-  /* Shadow Effects */
+  /* Shadow Effects - DigitalOcean Blue Theme */
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
@@ -221,6 +253,18 @@
 
   .shadow-card {
     box-shadow: var(--shadow-card);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+
+  .shadow-large {
+    box-shadow: var(--shadow-large);
   }
 
   /* Animations */

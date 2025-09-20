@@ -101,21 +101,19 @@ const ElementNotification = ({
           <div 
             className={`h-full ${
               isOwnDiscovery ? 'bg-green-500' : 'bg-blue-500'
-            } animate-shrink`}
+            }`}
             style={{
-              animation: `shrink ${duration}ms linear forwards`
+              animation: `shrinkWidth ${duration}ms linear forwards`,
+              width: '100%'
             }}
           />
         </div>
       </Card>
 
-      <style jsx>{`
-        @keyframes shrink {
+      <style>{`
+        @keyframes shrinkWidth {
           from { width: 100%; }
           to { width: 0%; }
-        }
-        .animate-shrink {
-          animation: shrink ${duration}ms linear forwards;
         }
       `}</style>
     </div>

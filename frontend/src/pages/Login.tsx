@@ -8,6 +8,7 @@ import { ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
+import logo from "../assets/logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -51,34 +52,35 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-learning flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Animation */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-white/10 rounded-full animate-float" />
-        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-white/10 rounded-full animate-float" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 right-1/6 w-16 h-16 bg-white/10 rounded-full animate-float" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="relative z-10 w-full max-w-md">
-        {/* Back Button */}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-md">
+        {/* Clean Back Button */}
         <Button
           variant="ghost"
-          className="mb-6 text-white hover:bg-white/10"
+          className="mb-6 text-gray-600 hover:text-gray-900"
           onClick={() => navigate('/')}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Button>
 
-        <Card className="card-battle animate-slide-up backdrop-blur-sm bg-white/95">
+        <Card className="bg-white border border-gray-200 shadow-lg rounded-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              {isSignUp ? "Join Duelingo" : "Welcome Back"}
+            <div className="flex items-center justify-center mb-4">
+              <img 
+                src={logo} 
+                alt="Duelingo Logo" 
+                className="h-16 w-16 mr-3"
+              />
+              <span className="text-2xl font-bold text-gray-900">Duelingo</span>
+            </div>
+            <CardTitle className="text-3xl font-bold text-gray-900">
+              {isSignUp ? "Create Account" : "Welcome Back"}
             </CardTitle>
-            <CardDescription className="text-lg">
+            <CardDescription className="text-gray-600">
               {isSignUp 
-                ? "Create your account and start your language learning journey" 
-                : "Log in to continue your language adventure"
+                ? "Sign up to start your language learning journey" 
+                : "Sign in to continue learning"
               }
             </CardDescription>
           </CardHeader>
@@ -87,11 +89,11 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {isSignUp && (
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-medium">
+                  <Label htmlFor="name" className="text-sm font-medium text-gray-700">
                     Full Name
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
                       id="name"
                       name="name"
@@ -99,7 +101,7 @@ const Login = () => {
                       placeholder="Enter your full name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="pl-10 h-12"
+                      className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                       required={isSignUp}
                     />
                   </div>
@@ -107,11 +109,11 @@ const Login = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                   Email
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="email"
                     name="email"
@@ -119,18 +121,18 @@ const Login = () => {
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10 h-12"
+                    className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     id="password"
                     name="password"
@@ -138,7 +140,7 @@ const Login = () => {
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pl-10 h-12"
+                    className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                     required
                   />
                 </div>
@@ -146,7 +148,7 @@ const Login = () => {
 
               <Button 
                 type="submit" 
-                className="w-full btn-hero h-12 text-base"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 disabled={isLoading}
               >
                 {isLoading ? 'Loading...' : (isSignUp ? "Create Account" : "Sign In")}
@@ -154,12 +156,12 @@ const Login = () => {
             </form>
 
             <div className="text-center mt-6">
-              <p className="text-muted-foreground">
+              <p className="text-gray-600 text-sm mb-2">
                 {isSignUp ? "Already have an account?" : "Don't have an account?"}
               </p>
               <Button
                 variant="link"
-                className="text-primary font-semibold p-0 h-auto"
+                className="text-blue-600 hover:text-blue-700 font-medium p-0 h-auto"
                 onClick={() => {
                   setIsSignUp(!isSignUp);
                   setFormData({ name: '', email: '', password: '' });

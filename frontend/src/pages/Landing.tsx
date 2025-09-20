@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, Users, Trophy, Sparkles, Globe, Zap } from "lucide-react";
+import logo from "../assets/logo.png";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -48,83 +49,75 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-20 h-20 bg-primary/20 rounded-full animate-float" />
-        <div className="absolute top-40 right-20 w-16 h-16 bg-secondary/20 rounded-full animate-float" style={{ animationDelay: '0.5s' }} />
-        <div className="absolute bottom-32 left-1/4 w-12 h-12 bg-accent/20 rounded-full animate-float" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-20 right-1/3 w-24 h-24 bg-battle/20 rounded-full animate-float" style={{ animationDelay: '1.5s' }} />
-      </div>
-
-      <div className="relative z-10 container mx-auto px-4 py-16">
-        {/* Hero Section */}
-        <div className="text-center mb-16 animate-slide-up">
-          <h1 className="text-6xl md:text-8xl font-bold text-white mb-6 tracking-tight">
-            Duelingo
-          </h1>
-          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Learn languages through epic battles! Combine words like magic, 
-            compete with friends, and master element combinations in the most fun way possible.
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto px-6 py-16 lg:py-24">
+        {/* Clean Hero Section */}
+        <div className="text-center mb-20 max-w-4xl mx-auto">
+          <div className="flex items-center justify-center mb-8">
+            <img 
+              src={logo} 
+              alt="Duelingo Logo" 
+              className="h-24 w-24 md:h-32 md:w-32 lg:h-40 lg:w-40 mr-4"
+            />
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight">
+              Duelingo
+            </h1>
+          </div>
+          <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+            Learn languages through interactive battles. Combine words, compete with friends, 
+            and master vocabulary in an engaging way.
           </p>
-          <Button 
-            onClick={() => navigate('/login')}
-            className="btn-hero text-lg px-12 py-6 animate-pulse-glow"
-          >
-            Start Your Adventure
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button 
+              onClick={() => navigate('/login')}
+              variant="default"
+              className="text-lg px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Get Started
+            </Button>
+            <Button 
+              variant="outline" 
+              className="text-lg px-8 py-4 border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Learn More
+            </Button>
+          </div>
         </div>
 
-        {/* Feature Cards Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {/* Clean Feature Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-20">
           {features.map((feature, index) => (
             <Card
               key={index}
-              className={`
-                card-float p-8 bg-white/10 backdrop-blur-sm border-white/20 
-                hover:bg-white/20 group cursor-pointer transition-all duration-500
-                ${hoveredCard === index ? 'scale-105 shadow-glow' : ''}
-              `}
-              onMouseEnter={() => setHoveredCard(index)}
-              onMouseLeave={() => setHoveredCard(null)}
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="p-8 bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-300 rounded-lg"
             >
-              <div className={`
-                w-16 h-16 rounded-xl bg-gradient-to-r ${feature.gradient} 
-                flex items-center justify-center mb-4 text-white
-                group-hover:scale-110 transition-transform duration-300
-              `}>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 text-blue-600">
                 {feature.icon}
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">
                 {feature.title}
               </h3>
-              <p className="text-white/80 leading-relaxed">
+              <p className="text-gray-600 leading-relaxed">
                 {feature.description}
               </p>
             </Card>
           ))}
         </div>
 
-        {/* Call to Action */}
-        <div className="text-center mt-16">
-          <p className="text-white/90 text-lg mb-6">
-            Ready to revolutionize how you learn languages?
+        {/* Clean Call to Action */}
+        <div className="text-center bg-gray-50 rounded-2xl p-12 max-w-4xl mx-auto">
+          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+            Ready to start learning?
+          </h2>
+          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+            Join thousands of learners improving their language skills through interactive battles.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => navigate('/login')}
-              className="btn-learning"
-            >
-              Join the Battle
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-white/30 text-white hover:bg-white/10 hover:border-white/50"
-            >
-              Watch Demo
-            </Button>
-          </div>
+          <Button 
+            onClick={() => navigate('/login')}
+            className="text-lg px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Get Started Today
+          </Button>
         </div>
       </div>
     </div>

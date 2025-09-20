@@ -7,7 +7,8 @@ const { create_element } = require('./llm');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('./db'); // Connect to database
-const { User } = require('./schema');
+const { User, InitialElementsAudio } = require('./schema');
+const { getInitialElements } = require('./languages');
 
 const app = express();
 const server = http.createServer(app);
@@ -35,7 +36,23 @@ var target_elements = [
     'house',
     'sword',
     'cloud',
-    'cloud'
+    'steam',
+    'electricity',
+    'plant',
+    'metal',
+    'glass',
+    'storm',
+    'lightning',
+    'diamond',
+    'obsidian',
+    'tool',
+    'machine',
+    'volcano',
+    'ocean',
+    'forest',
+    'mountain',
+    'desert',
+    'castle'
 ]
 
 var rooms = {}
@@ -126,13 +143,14 @@ const getRandomTargetElement = () => {
   return target_elements[randomIndex];
 };
 
-const createNewRoom = (roomId, roomName, roomDescription, creatorSocket) => {
+const createNewRoom = (roomId, roomName, roomDescription, creatorSocket, language = 'en-US') => {
   const targetElement = getRandomTargetElement();
   
   const newRoom = {
     name: roomName || `Room ${roomId}`,
     description: roomDescription || `Room ${roomId} description`,
     target_element: targetElement,
+    language: language, // Store the room's language for TTS
     players: {}, // Changed to object to store both ID and name
     player_stats: {},
     gameStatus: 'waiting', // 'waiting', 'active', or 'ended'
@@ -145,7 +163,7 @@ const createNewRoom = (roomId, roomName, roomDescription, creatorSocket) => {
   };
   
   rooms[roomId] = newRoom;
-  console.log(`🎯 Room ${roomId} created by ${creatorSocket.user.name} with target element: ${targetElement}`);
+  console.log(`🎯 Room ${roomId} created by ${creatorSocket.user.name} with target element: ${targetElement}, language: ${language}`);
   
   return newRoom;
 };
@@ -186,12 +204,13 @@ const removePlayerFromRoom = (userId, roomId) => {
   return true;
 };
 
-const checkForGameEnd = (socket, roomId, createdElement) => {
+const checkForGameEnd = (socket, roomId, createdElementData) => {
   const room = rooms[roomId];
   if (!room || room.gameStatus === 'ended') return false;
   
-  // Check if created element matches target
-  if (createdElement.toLowerCase() === room.target_element.toLowerCase()) {
+  // Check if created element matches target (using English text for comparison)
+  const createdElementEnglish = createdElementData.en_text || createdElementData.element;
+  if (createdElementEnglish.toLowerCase() === room.target_element.toLowerCase()) {
     // End the game
     room.gameStatus = 'ended';
     room.winner = socket.userId;
@@ -368,15 +387,19 @@ const handleCreateElement = async (socket, data) => {
     const { element1, element2 } = data;
     console.log(`🧪 Creating element: ${element1} + ${element2} for user ${socket.user.name}`);
     
-    // Call the create_element function from llm.js
-    const result = await create_element(element1, element2);
-    const newElement = result.element;
-    const newEmoji = result.emoji;
-    const combination = `${element1} + ${element2}`;
-    
-    // Get user's current room
+    // Get user's current room to determine language
     const userInfo = connectedUsers[socket.id];
     const roomId = userInfo?.roomId;
+    const room = roomId ? rooms[roomId] : null;
+    const languageCode = room?.language || 'en-US';
+    
+    // Call the create_element function from llm.js with the room's language
+    const result = await create_element(element1, element2, languageCode);
+    const newElement = result.element;
+    const newEmoji = result.emoji;
+    const audioB64 = result.audio_b64;
+    const enText = result.en_text;
+    const combination = `${element1} + ${element2}`;
     
     let gameEnded = false;
     let roomStats = null;
@@ -432,8 +455,10 @@ const handleCreateElement = async (socket, data) => {
       message: 'Element created successfully',
       data: {
         element: newElement,
+        en_text: enText, // Include English text for target matching and display
         emoji: newEmoji,
         combination: combination,
+        audio_b64: audioB64,
         ...(roomStats ? { roomStats } : {})
       }
     });
@@ -445,7 +470,7 @@ const handleCreateElement = async (socket, data) => {
     
     // THEN check for game end condition (after element is sent)
     if (roomId) {
-      gameEnded = checkForGameEnd(socket, roomId, newElement);
+      gameEnded = checkForGameEnd(socket, roomId, result);
     }
     
     console.log(`✨ Element created: ${newElement} by ${socket.user.name}`);
@@ -475,7 +500,7 @@ io.on('connection', (socket) => {
 
   // Handle user joining a room
   socket.on('join_room', (data) => {
-    const { roomId, roomName, roomDescription } = data;
+    const { roomId, roomName, roomDescription, language } = data;
     
     try {
       // Leave current room if in one
@@ -498,7 +523,7 @@ io.on('connection', (socket) => {
 
       // Create room if it doesn't exist
       if (!rooms[roomId]) {
-        createNewRoom(roomId, roomName, roomDescription, socket);
+        createNewRoom(roomId, roomName, roomDescription, socket, language);
       }
 
       // Add user to room
@@ -771,6 +796,61 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
     res.json({ user });
   } catch (error) {
     console.error('Error fetching profile:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get initial elements for a specific language
+app.get('/api/elements/initial/:languageCode', (req, res) => {
+  try {
+    const languageCode = req.params.languageCode || 'en-US';
+    const initialElements = getInitialElements(languageCode);
+    res.json({ 
+      elements: initialElements,
+      language: languageCode 
+    });
+  } catch (error) {
+    console.error('Error fetching initial elements:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get initial elements with default language
+app.get('/api/elements/initial', (req, res) => {
+  try {
+    const languageCode = 'en-US';
+    const initialElements = getInitialElements(languageCode);
+    res.json({ 
+      elements: initialElements,
+      language: languageCode 
+    });
+  } catch (error) {
+    console.error('Error fetching initial elements:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get initial elements audio for a specific language
+app.get('/api/elements/initial-audio/:languageCode', async (req, res) => {
+  try {
+    const languageCode = req.params.languageCode || 'en-US';
+    
+    const audioEntries = await InitialElementsAudio.find({ languageCode });
+    
+    // Convert to simple object map
+    const audioMap = {};
+    audioEntries.forEach(entry => {
+      if (entry.audio_b64) {
+        audioMap[entry.elementKey] = entry.audio_b64;
+      }
+    });
+    
+    res.json({ 
+      language: languageCode,
+      audio: audioMap 
+    });
+  } catch (error) {
+    console.error('Error fetching initial elements audio:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

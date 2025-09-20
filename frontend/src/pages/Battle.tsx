@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, Trophy, Target, ArrowLeft, Play } from "lucide-react";
@@ -13,12 +13,15 @@ import StoryModal from "@/components/battle/StoryModal";
 import RoomLobby from "@/components/battle/RoomLobby";
 import GameOverlay from "@/components/notifications/GameOverlay";
 import ElementNotification from "@/components/notifications/ElementNotification";
+import { playBase64Audio } from "@/lib/utils";
+import { API_BASE_URL } from "@/lib/api";
 
-// Basic elements for the battle
-const INITIAL_ELEMENTS = [
+// Default basic elements for the battle (fallback)
+const DEFAULT_INITIAL_ELEMENTS = [
   { id: "water", text: "Water", emoji: "💧" },
   { id: "fire", text: "Fire", emoji: "🔥" },
   { id: "earth", text: "Earth", emoji: "🌍" },
+  { id: "air", text: "Air", emoji: "💨" },
   { id: "axe", text: "Axe", emoji: "🪓" },
   { id: "pickaxe", text: "Pickaxe", emoji: "⛏️" },
   { id: "stemcell", text: "Stemcell", emoji: "🔬" },
@@ -31,6 +34,7 @@ const INITIAL_ELEMENTS = [
 const Battle = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { 
     connected, 
@@ -46,7 +50,7 @@ const Battle = () => {
   
   const [timeLeft, setTimeLeft] = useState(120); // 2 minutes
   const [isActive, setIsActive] = useState(false); // Wait for game to start
-  const [availableElements, setAvailableElements] = useState(INITIAL_ELEMENTS);
+  const [availableElements, setAvailableElements] = useState(DEFAULT_INITIAL_ELEMENTS);
   const [canvasElements, setCanvasElements] = useState<Array<any>>([]);
   const [discoveries, setDiscoveries] = useState<Array<any>>([]);
   const [targetWord, setTargetWord] = useState("Unknown"); // Will be set from room
@@ -59,6 +63,7 @@ const Battle = () => {
   const [showGameOverlay, setShowGameOverlay] = useState(false);
   const [gameOverlayData, setGameOverlayData] = useState<any>(null);
   const [elementNotifications, setElementNotifications] = useState<any[]>([]);
+  const [elementAudio, setElementAudio] = useState<Map<string, string>>(new Map());
 
   // Check authentication
   useEffect(() => {
@@ -70,10 +75,14 @@ const Battle = () => {
   // Join room when component mounts and socket is connected
   useEffect(() => {
     if (connected && roomCode && !roomJoined) {
-      joinRoom(roomCode, `Battle Room ${roomCode}`, `Real-time battle room`);
+      const language = location.state?.language || 'en-US';
+      joinRoom(roomCode, `Battle Room ${roomCode}`, `Real-time battle room`, language);
       setRoomJoined(true);
+      
+      // Fetch language-specific initial elements
+      fetchInitialElements(language);
     }
-  }, [connected, roomCode, roomJoined, joinRoom]);
+  }, [connected, roomCode, roomJoined, joinRoom, location.state]);
 
   // Update room info when currentRoom changes
   useEffect(() => {
@@ -130,11 +139,32 @@ const Battle = () => {
       }
       
       if (data.element) {
+        // Store audio data for the element if available
+        if (data.audio_b64) {
+          setElementAudio(prev => {
+            const newMap = new Map(prev);
+            newMap.set(data.element.toLowerCase(), data.audio_b64);
+            return newMap;
+          });
+          
+          // Play audio immediately for the newly created element
+          try {
+            playBase64Audio(data.audio_b64, 0.5);
+          } catch (error) {
+            console.error('Failed to play element creation audio:', error);
+          }
+        }
+        
         // Create a new element object with proper formatting
+        const displayText = data.en_text && data.en_text !== data.element 
+          ? `${data.element} (${data.en_text})`
+          : data.element;
+          
         const newElement = {
           id: `backend-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          text: data.element,
+          text: displayText,
           emoji: data.emoji || '✨', // Use generated emoji or fallback to sparkles
+          en_text: data.en_text, // Store English text separately for matching
         };
 
         // Check if this was from a canvas combination (placeholder replacement)
@@ -275,6 +305,23 @@ const Battle = () => {
     };
   }, [isActive, timeLeft]);
 
+  // Helper function to extract English name from element
+  const getEnglishElementName = (element: any): string => {
+    // If element has en_text, use it
+    if (element.en_text) {
+      return element.en_text;
+    }
+    
+    // If element text contains parentheses like "水 (Water)", extract the English part
+    const match = element.text.match(/\(([^)]+)\)$/);
+    if (match) {
+      return match[1]; // Return "Water" from "水 (Water)"
+    }
+    
+    // For elements like "Fire" or "Water" (already in English), use as-is
+    return element.text;
+  };
+
   const handleElementCombination = (element1: any, element2: any, placeholderId?: string) => {
     if (!connected || !isActive) {
       toast.error("Game is not active or not connected to server");
@@ -293,8 +340,14 @@ const Battle = () => {
       (window as any).pendingCombination = placeholderInfo;
     }
 
-    // Use socket to create element instead of local rules
-    createElement(element1.text, element2.text);
+    // Extract English element names for consistent backend processing
+    const englishElement1 = getEnglishElementName(element1);
+    const englishElement2 = getEnglishElementName(element2);
+    
+    console.log(`Combining elements: ${element1.text} (${englishElement1}) + ${element2.text} (${englishElement2})`);
+
+    // Use socket to create element with English names
+    createElement(englishElement1, englishElement2);
   };
 
   const handleStartGame = () => {
@@ -317,12 +370,74 @@ const Battle = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Function to play audio for an element
+  const playElementAudio = async (elementText: string) => {
+    const audioData = elementAudio.get(elementText.toLowerCase());
+    if (audioData) {
+      try {
+        await playBase64Audio(audioData, 0.5); // Lower volume so it's not too loud
+      } catch (error) {
+        console.error('Failed to play element audio:', error);
+      }
+    }
+  };
+
+  // Function to fetch language-specific initial elements
+  const fetchInitialElements = async (languageCode: string) => {
+    try {
+      // Fetch elements
+      const elementsResponse = await fetch(`${API_BASE_URL}/api/elements/initial/${languageCode}`);
+      if (elementsResponse.ok) {
+        const elementsData = await elementsResponse.json();
+        setAvailableElements(elementsData.elements);
+        console.log(`🌍 Loaded ${elementsData.elements.length} initial elements for ${languageCode}`);
+        
+        // Fetch audio for initial elements
+        const audioResponse = await fetch(`${API_BASE_URL}/api/elements/initial-audio/${languageCode}`);
+        if (audioResponse.ok) {
+          const audioData = await audioResponse.json();
+          
+          // Add audio to elementAudio map using both element ID and display text
+          setElementAudio(prev => {
+            const newMap = new Map(prev);
+            
+            // Map audio by element key first
+            Object.entries(audioData.audio).forEach(([elementKey, audioB64]) => {
+              newMap.set(elementKey.toLowerCase(), audioB64 as string);
+            });
+            
+            // Also map audio by display text for each element
+            elementsData.elements.forEach((element: any) => {
+              const audioB64 = audioData.audio[element.id];
+              if (audioB64) {
+                // Map by display text (e.g., "水 (Water)" or "Fire")
+                newMap.set(element.text.toLowerCase(), audioB64);
+                // Also map by English text if available
+                if (element.en_text) {
+                  newMap.set(element.en_text.toLowerCase(), audioB64);
+                }
+              }
+            });
+            
+            return newMap;
+          });
+          
+          console.log(`🔊 Loaded audio for ${Object.keys(audioData.audio).length} initial elements`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error fetching initial elements:', error);
+      // Keep using default elements if fetch fails
+    }
+  };
+
   const restartBattle = () => {
     setTimeLeft(120); // 2 minutes
     setIsActive(true);
     setCanvasElements([]);
     setDiscoveries([]);
-    setAvailableElements(INITIAL_ELEMENTS);
+    setAvailableElements(DEFAULT_INITIAL_ELEMENTS);
     setGameEnded(false);
     setShowStory(false);
     setPlayerWon(false);
@@ -399,13 +514,13 @@ const Battle = () => {
             )}
             
             {/* Game Status Indicator */}
-            <Card className="px-3 py-2">
+            <Card className="px-3 py-2 shadow-soft hover:shadow-medium transition-shadow duration-200">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${
-                  currentRoom?.gameStatus === 'active' ? 'bg-green-500' : 
-                  currentRoom?.gameStatus === 'waiting' ? 'bg-yellow-500' : 'bg-red-500'
+                  currentRoom?.gameStatus === 'active' ? 'bg-green-500 shadow-sm' : 
+                  currentRoom?.gameStatus === 'waiting' ? 'bg-warning shadow-sm' : 'bg-destructive shadow-sm'
                 }`} />
-                <span className="text-sm capitalize">{currentRoom?.gameStatus || 'connecting'}</span>
+                <span className="text-sm capitalize font-medium">{currentRoom?.gameStatus || 'connecting'}</span>
               </div>
             </Card>
           </div>
@@ -431,6 +546,7 @@ const Battle = () => {
               onElementsChange={setCanvasElements}
               onCombination={handleElementCombination}
               isActive={isActive}
+              onElementDrag={playElementAudio}
             />
           </div>
 
@@ -447,14 +563,16 @@ const Battle = () => {
 
           {/* Target Prompt */}
           <div className="battle-prompt">
-            <Card className="p-4 bg-primary/5 border-primary/20">
+            <Card className="p-4 bg-primary/10 border-primary/30 shadow-medium hover:shadow-large transition-shadow duration-300">
               <div className="text-center">
                 <h3 className="font-semibold text-lg mb-2 flex items-center justify-center gap-2">
-                  <Trophy className="w-5 h-5 text-primary" />
+                  <div className="p-1 rounded-lg bg-primary/20">
+                    <Trophy className="w-4 h-4 text-primary" />
+                  </div>
                   Battle Objective
                 </h3>
                 <p className="text-muted-foreground">
-                  Create "<span className="font-bold text-primary">{targetWord}</span>" by combining elements!
+                  Create "<span className="font-bold text-primary bg-primary/10 px-2 py-1 rounded-md">{targetWord}</span>" by combining elements!
                 </p>
                 
                 {/* Game Status Messages */}
@@ -477,10 +595,10 @@ const Battle = () => {
                 
                 {gameEnded && (
                   <div className="mt-4 flex justify-center gap-2">
-                    <Button onClick={restartBattle} variant="outline">
+                    <Button onClick={restartBattle} variant="outline" className="shadow-soft hover:shadow-medium">
                       Play Again
                     </Button>
-                    <Button onClick={() => setShowStory(true)}>
+                    <Button onClick={() => setShowStory(true)} variant="gradient" className="shadow-medium hover:shadow-large">
                       View Story
                     </Button>
                   </div>
