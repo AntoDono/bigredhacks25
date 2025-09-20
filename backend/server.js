@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
+const { create_element } = require('./llm');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +14,12 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // Basic health check route
 app.get('/', (req, res) => {
   res.send('BigRedHacks 2025 Backend Server');
+});
+
+app.post('/create-element', async (req, res) => {
+  const { element1, element2 } = req.body;
+  const newElement = await create_element(element1, element2);
+  res.json({ element: newElement.element });
 });
 
 // Start server
