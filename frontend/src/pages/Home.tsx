@@ -11,16 +11,16 @@ import Profile from "@/components/Profile";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const [roomCode, setRoomCode] = useState("");
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [generatedCode, setGeneratedCode] = useState("");
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   const generateRoomCode = () => {
     const code = Math.random().toString(36).substring(2, 5).toUpperCase() + 
@@ -56,6 +56,17 @@ const Home = () => {
   const startBattle = () => {
     navigate(`/battle/${generatedCode}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return null; // Will redirect to login
