@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
+const { create_element } = require('./llm');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('./db'); // Connect to database
@@ -35,6 +37,12 @@ const authenticateToken = (req, res, next) => {
 // Basic health check route
 app.get('/', (req, res) => {
   res.send('BigRedHacks 2025 Backend Server');
+});
+
+app.post('/create-element', async (req, res) => {
+  const { element1, element2 } = req.body;
+  const newElement = await create_element(element1, element2);
+  res.json({ element: newElement.element });
 });
 
 // Create user route
