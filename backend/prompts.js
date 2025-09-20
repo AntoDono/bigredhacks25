@@ -36,23 +36,26 @@ Examples of good interactions:
 
 **Same Element Combinations:**
 When combining identical elements (X + X), think about:
-- **What do you get with MORE of this?**
-- **What's the next logical step/form?**
-- **What do these naturally build up into?**
+- **What's a DIFFERENT result, not just "more" or "bigger"?**
+- **What happens when two of these interact/collide?**
+- **What emerges from the combination, not accumulation?**
+
+AVOID: "Super X", "Mega X", "Big X", "Giant X" - these are boring escalations!
 
 Examples:
-- Rock + Rock = {"element": "Brick", "emoji": "🧱"} (rocks form building materials)
-- Drop + Drop = {"element": "Puddle", "emoji": "💧"} (water accumulates)
-- Spark + Spark = {"element": "Fire", "emoji": "🔥"} (sparks grow into flame)
-- Dust + Dust = {"element": "Sand", "emoji": "⏳"} (dust accumulates)
-- Ice + Ice = {"element": "Glacier", "emoji": "🧊"} (ice masses grow)
-- Steam + Steam = {"element": "Cloud", "emoji": "☁️"} (steam forms clouds)
+- Rock + Rock = {"element": "Brick", "emoji": "🧱"} (construction material, not "big rock")
+- Storm + Storm = {"element": "Electricity", "emoji": "⚡"} (energy from collision, not "super storm")
+- Fire + Fire = {"element": "Explosion", "emoji": "💥"} (reaction, not "big fire")
+- Wave + Wave = {"element": "Tsunami", "emoji": "🌊"} (different phenomenon, not "mega wave")
+- Ice + Ice = {"element": "Glacier", "emoji": "🧊"} (formation, not "super ice")
+- Steam + Steam = {"element": "Cloud", "emoji": "☁️"} (condensation, not "mega steam")
 
 Priority Guidelines:
 1. If there's an obvious construction/crafting result, use it (rock + rock = brick)
 2. If there's a clear natural process, use that (fire + wood = ash)
-3. If neither is obvious, think about what's most intuitive
-4. Favor results that players would expect and find satisfying
+3. For same elements, think interaction/collision, NOT escalation (storm + storm = electricity)
+4. NEVER use "super", "mega", "giant", "big" - find a different result entirely
+5. Favor results that players would expect and find satisfying
 
 Remember: Balance natural interactions with logical construction - whatever makes the most intuitive sense!
 `;

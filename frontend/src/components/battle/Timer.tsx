@@ -6,9 +6,10 @@ interface TimerProps {
   isActive: boolean;
   gameEnded: boolean;
   playerWon?: boolean;
+  totalDuration?: number; // Total game duration for progress bar calculation
 }
 
-const Timer = ({ timeLeft, isActive, gameEnded, playerWon }: TimerProps) => {
+const Timer = ({ timeLeft, isActive, gameEnded, playerWon, totalDuration = 120 }: TimerProps) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -76,7 +77,7 @@ const Timer = ({ timeLeft, isActive, gameEnded, playerWon }: TimerProps) => {
               h-full transition-all duration-1000 ease-linear
               ${timeLeft <= 10 ? 'bg-destructive' : timeLeft <= 30 ? 'bg-warning' : 'bg-primary'}
             `}
-            style={{ width: `${(timeLeft / 60) * 100}%` }}
+            style={{ width: `${(timeLeft / totalDuration) * 100}%` }}
           />
         </div>
       </CardContent>

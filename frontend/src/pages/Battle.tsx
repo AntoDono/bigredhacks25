@@ -10,6 +10,7 @@ import BattleCanvas from "@/components/battle/BattleCanvas";
 import ElementSidebar from "@/components/battle/ElementSidebar";
 import Timer from "@/components/battle/Timer";
 import StoryModal from "@/components/battle/StoryModal";
+import RoomLobby from "@/components/battle/RoomLobby";
 
 // Basic elements for the battle
 const INITIAL_ELEMENTS = [
@@ -52,6 +53,7 @@ const Battle = () => {
   const [playerWon, setPlayerWon] = useState(false);
   const [roomJoined, setRoomJoined] = useState(false);
   const [isRoomCreator, setIsRoomCreator] = useState(false);
+  const [showLobby, setShowLobby] = useState(false);
 
   // Check authentication
   useEffect(() => {
@@ -77,6 +79,9 @@ const Battle = () => {
       
       // Check if current user is the room creator
       setIsRoomCreator(currentRoom.createdBy?.userId === user?.id);
+      
+      // Show lobby if game is waiting, hide when game starts or ends
+      setShowLobby(currentRoom.gameStatus === 'waiting');
       
       if (currentRoom.gameStatus === 'active' && currentRoom.startedAt) {
         // Calculate time left based on start time (2 minute game)
@@ -167,18 +172,24 @@ const Battle = () => {
   useEffect(() => {
     if (!isActive || timeLeft <= 0) return;
 
+    console.log(`Timer starting: isActive=${isActive}, timeLeft=${timeLeft}`);
+    
     const interval = setInterval(() => {
       setTimeLeft((time) => {
         if (time <= 1) {
           setIsActive(false);
           setGameEnded(true);
+          console.log('Timer ended - game over');
           return 0;
         }
         return time - 1;
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log('Timer cleanup');
+      clearInterval(interval);
+    };
   }, [isActive, timeLeft]);
 
   const handleElementCombination = (element1: any, element2: any, placeholderId?: string) => {
@@ -232,6 +243,11 @@ const Battle = () => {
     setGameEnded(false);
     setShowStory(false);
     setPlayerWon(false);
+  };
+
+
+  const handleLeaveRoom = () => {
+    navigate('/');
   };
 
   return (
@@ -296,6 +312,7 @@ const Battle = () => {
               isActive={isActive} 
               gameEnded={gameEnded}
               playerWon={playerWon}
+              totalDuration={120}
             />
           </div>
 
@@ -373,6 +390,16 @@ const Battle = () => {
         elements={[...canvasElements, ...discoveries]}
         playerWon={playerWon}
         targetWord={targetWord}
+      />
+
+      {/* Room Lobby Overlay */}
+      <RoomLobby
+        show={showLobby}
+        roomCode={roomCode || ''}
+        roomData={currentRoom}
+        isRoomCreator={isRoomCreator}
+        onStartGame={handleStartGame}
+        onLeaveRoom={handleLeaveRoom}
       />
     </div>
   );

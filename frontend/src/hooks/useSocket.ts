@@ -104,7 +104,13 @@ export const useSocket = (): UseSocketReturn => {
           if (currentRoom) {
             setCurrentRoom(prev => ({
               ...prev,
-              players: [...prev.players, data.data.userId]
+              players: {
+                ...prev.players,
+                [data.data.userId]: {
+                  name: data.data.userName,
+                  joinedAt: new Date()
+                }
+              }
             }));
           }
           break;
@@ -150,10 +156,14 @@ export const useSocket = (): UseSocketReturn => {
       toast.info(`${data.userName} left the room`);
       // Update current room player count
       if (currentRoom) {
-        setCurrentRoom(prev => ({
-          ...prev,
-          players: prev.players.filter((id: string) => id !== data.userId)
-        }));
+        setCurrentRoom(prev => {
+          const newPlayers = { ...prev.players };
+          delete newPlayers[data.userId];
+          return {
+            ...prev,
+            players: newPlayers
+          };
+        });
       }
     };
 
