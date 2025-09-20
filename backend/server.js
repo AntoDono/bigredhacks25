@@ -7,7 +7,7 @@ const { create_element } = require('./llm');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('./db'); // Connect to database
-const { User, InitialElementsAudio } = require('./schema');
+const { User, Game, InitialElementsAudio } = require('./schema');
 const { getInitialElements } = require('./languages');
 
 const app = express();
@@ -205,7 +205,68 @@ const removePlayerFromRoom = (userId, roomId) => {
   return true;
 };
 
-const checkForGameEnd = (socket, roomId, createdElementData) => {
+const saveGameToDatabase = async (room, roomId) => {
+  console.log("Saving game to database", room, roomId);
+  try {
+    // Prepare players data
+    const players = Object.keys(room.players).map(userId => ({
+      userId: userId,
+      userName: room.players[userId].name || room.players[userId], // Handle both object and string formats
+      score: room.player_stats[userId]?.score || 0,
+      elementsDiscovered: room.player_stats[userId]?.elements?.length || 0
+    }));
+
+    // Calculate game duration
+    const duration = room.startedAt && room.endedAt ? 
+      Math.floor((room.endedAt - room.startedAt) / 1000) : 0;
+
+    // Create new game record
+    const game = new Game({
+      players: players,
+      winner: {
+        userId: room.winner,
+        userName: room.players[room.winner]?.name || room.players[room.winner] // Handle both object and string formats
+      },
+      targetElement: room.target_element,
+      roomName: room.name,
+      language: room.language || 'en-US',
+      startedAt: room.startedAt,
+      endedAt: room.endedAt,
+      duration: duration
+    });
+
+    const savedGame = await game.save();
+    console.log(`💾 Game saved to database with ID: ${savedGame._id}`);
+
+    // Update player statistics
+    for (const player of players) {
+      try {
+        const user = await User.findById(player.userId);
+        if (user) {
+          user.gamesPlayed += 1;
+          user.games.push(savedGame._id);
+          
+          // Increment wins for the winner
+          if (player.userId.toString() === room.winner.toString()) {
+            user.gamesWon += 1;
+          }
+          
+          await user.save();
+          console.log(`📊 Updated stats for ${player.userName}: ${user.gamesWon}/${user.gamesPlayed} wins`);
+        }
+      } catch (userError) {
+        console.error(`Error updating user stats for ${player.userName}:`, userError);
+      }
+    }
+
+    return savedGame;
+  } catch (error) {
+    console.error('Error saving game to database:', error);
+    return null;
+  }
+};
+
+const checkForGameEnd = async (socket, roomId, createdElementData) => {
   const room = rooms[roomId];
   if (!room || room.gameStatus === 'ended') return false;
   
@@ -216,6 +277,9 @@ const checkForGameEnd = (socket, roomId, createdElementData) => {
     room.gameStatus = 'ended';
     room.winner = socket.userId;
     room.endedAt = new Date();
+    
+    // Save game to database
+    await saveGameToDatabase(room, roomId);
     
     // Broadcast endgame to all players in room
     socket.to(roomId).emit('message_broadcast', {
@@ -247,7 +311,7 @@ const checkForGameEnd = (socket, roomId, createdElementData) => {
       }
     });
     
-    console.log(`🏆 Game ended! ${socket.user.name} won room ${roomId} by creating ${createdElement}`);
+    console.log(`🏆 Game ended! ${socket.user.name} won room ${roomId} by creating ${createdElementEnglish}`);
     return true;
   }
   
@@ -471,7 +535,7 @@ const handleCreateElement = async (socket, data) => {
     
     // THEN check for game end condition (after element is sent)
     if (roomId) {
-      gameEnded = checkForGameEnd(socket, roomId, result);
+      gameEnded = await checkForGameEnd(socket, roomId, result);
     }
     
     console.log(`✨ Element created: ${newElement} by ${socket.user.name}`);
@@ -827,6 +891,8 @@ app.post('/api/users', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        gamesWon: user.gamesWon || 0,
+        gamesPlayed: user.gamesPlayed || 0,
         createdAt: user.createdAt
       },
       token
@@ -873,6 +939,8 @@ app.post('/api/login', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        gamesWon: user.gamesWon || 0,
+        gamesPlayed: user.gamesPlayed || 0,
         createdAt: user.createdAt
       },
       token
