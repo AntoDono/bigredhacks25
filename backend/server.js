@@ -144,6 +144,7 @@ const getRandomTargetElement = () => {
 };
 
 const createNewRoom = (roomId, roomName, roomDescription, creatorSocket, language = 'en-US') => {
+  console.log("Creating new room", roomId, roomName, roomDescription, creatorSocket, language);
   const targetElement = getRandomTargetElement();
   
   const newRoom = {
@@ -503,6 +504,9 @@ io.on('connection', (socket) => {
     const { roomId, roomName, roomDescription, language } = data;
     
     try {
+      if (rooms[roomId].gameStatus !== "waiting"){
+        throw new Error("Room is not waiting for players");
+      }
       // Leave current room if in one
       if (connectedUsers[socket.id].roomId) {
         socket.leave(connectedUsers[socket.id].roomId);
