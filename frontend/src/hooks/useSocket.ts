@@ -63,7 +63,7 @@ export const useSocket = (): UseSocketReturn => {
     const handleRoomJoinError = (data: any) => {
       console.error('Room join error:', data);
       setRoomError(data.message);
-      toast.error(data.message);
+      // Don't show toast here - let the component handle it
     };
 
     // Message events

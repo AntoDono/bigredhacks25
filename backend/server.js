@@ -497,9 +497,9 @@ io.on('connection', (socket) => {
         }
       }
 
-      // Create room if it doesn't exist
+      // Check if room exists, throw error if not
       if (!rooms[roomId]) {
-        createNewRoom(roomId, roomName, roomDescription, socket);
+        throw new Error(`Room ${roomId} does not exist`);
       }
 
       // Add user to room

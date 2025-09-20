@@ -37,6 +37,7 @@ const Battle = () => {
     createElement, 
     startGame, 
     currentRoom,
+    roomError,
     onElementCreated,
     onGameEvent,
     offElementCreated,
@@ -62,6 +63,14 @@ const Battle = () => {
       navigate('/login');
     }
   }, [isAuthenticated, isLoading, navigate]);
+
+  // Handle room join errors - navigate back to home if room doesn't exist
+  useEffect(() => {
+    if (roomError) {
+      toast.error(`Room error: ${roomError}`);
+      navigate('/home');
+    }
+  }, [roomError, navigate]);
 
   // Join room when component mounts and socket is connected
   useEffect(() => {
