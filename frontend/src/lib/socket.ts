@@ -5,11 +5,14 @@ import { API_BASE_URL } from './api';
 export interface SocketEvents {
   // Client to server
   'join_room': (data: { roomId: string; roomName?: string; roomDescription?: string; language?: string }) => void;
+  'create_room': (data: { roomId: string; roomName?: string; roomDescription?: string; language?: string }) => void;
   'message': (data: { type: string; data: any }) => void;
 
   // Server to client
   'room_joined': (data: { success: boolean; roomId: string; room: any; message: string }) => void;
+  'room_created': (data: { success: boolean; roomId: string; room: any; message: string; isLeader: boolean }) => void;
   'room_join_error': (data: { success: boolean; message: string; error: string }) => void;
+  'room_create_error': (data: { success: boolean; message: string; error: string }) => void;
   'room_left': (data: { success: boolean; message: string; error?: string }) => void;
   'message_response': (data: { type: string; success: boolean; message: string; data: any; error?: string }) => void;
   'message_broadcast': (data: { type: string; data: any }) => void;
@@ -168,6 +171,13 @@ class SocketClient {
     this.socket.emit('join_room', roomData);
   }
 
+  createRoom(roomData: RoomJoinData) {
+    if (!this.socket?.connected) {
+      throw new Error('Socket not connected');
+    }
+    this.socket.emit('create_room', roomData);
+  }
+
   leaveRoom() {
     if (!this.socket?.connected) {
       throw new Error('Socket not connected');
@@ -201,8 +211,16 @@ class SocketClient {
     this.socket?.on('room_joined', callback);
   }
 
+  onRoomCreated(callback: (data: any) => void) {
+    this.socket?.on('room_created', callback);
+  }
+
   onRoomJoinError(callback: (data: any) => void) {
     this.socket?.on('room_join_error', callback);
+  }
+
+  onRoomCreateError(callback: (data: any) => void) {
+    this.socket?.on('room_create_error', callback);
   }
 
   onRoomLeft(callback: (data: any) => void) {

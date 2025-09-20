@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 
 interface UseSocketReturn {
   connected: boolean;
-  joinRoom: (roomId: string, roomName?: string, roomDescription?: string) => void;
+  joinRoom: (roomId: string, roomName?: string, roomDescription?: string, language?: string) => void;
+  createRoom: (roomId: string, roomName?: string, roomDescription?: string, language?: string) => void;
   leaveRoom: () => void;
   createElement: (element1: string, element2: string) => void;
   startGame: () => void;
@@ -60,10 +61,23 @@ export const useSocket = (): UseSocketReturn => {
       toast.success(data.message);
     };
 
+    const handleRoomCreated = (data: any) => {
+      console.log('Created room:', data);
+      setCurrentRoom({ ...data.room, isLeader: data.isLeader });
+      setRoomError(null);
+      toast.success(data.message);
+    };
+
     const handleRoomJoinError = (data: any) => {
       console.error('Room join error:', data);
       setRoomError(data.message);
       // Don't show toast here - let the component handle it
+    };
+
+    const handleRoomCreateError = (data: any) => {
+      console.error('Room create error:', data);
+      setRoomError(data.message);
+      toast.error(data.message);
     };
 
     // Message events
@@ -89,7 +103,6 @@ export const useSocket = (): UseSocketReturn => {
         case 'endgame':
           // Handle winner endgame event (sent via message_response to winner)
           console.log('Winner endgame event received:', data);
-          setGameEvent(data);
           break;
         default:
           if (data.success) {
@@ -185,7 +198,9 @@ export const useSocket = (): UseSocketReturn => {
 
     // Register event listeners
     socketClient.onRoomJoined(handleRoomJoined);
+    socketClient.onRoomCreated(handleRoomCreated);
     socketClient.onRoomJoinError(handleRoomJoinError);
+    socketClient.onRoomCreateError(handleRoomCreateError);
     socketClient.onMessageResponse(handleMessageResponse);
     socketClient.onMessageBroadcast(handleMessageBroadcast);
     socketClient.onMessageError(handleMessageError);
@@ -195,7 +210,9 @@ export const useSocket = (): UseSocketReturn => {
     // Cleanup function
     return () => {
       socketClient.off('room_joined', handleRoomJoined);
+      socketClient.off('room_created', handleRoomCreated);
       socketClient.off('room_join_error', handleRoomJoinError);
+      socketClient.off('room_create_error', handleRoomCreateError);
       socketClient.off('message_response', handleMessageResponse);
       socketClient.off('message_broadcast', handleMessageBroadcast);
       socketClient.off('message_error', handleMessageError);
@@ -213,6 +230,16 @@ export const useSocket = (): UseSocketReturn => {
 
     setRoomError(null);
     socketClient.joinRoom({ roomId, roomName, roomDescription, language });
+  }, [connected]);
+
+  const createRoom = useCallback((roomId: string, roomName?: string, roomDescription?: string, language?: string) => {
+    if (!connected) {
+      toast.error('Not connected to game server');
+      return;
+    }
+
+    setRoomError(null);
+    socketClient.createRoom({ roomId, roomName, roomDescription, language });
   }, [connected]);
 
   const leaveRoom = useCallback(() => {
@@ -270,6 +297,7 @@ export const useSocket = (): UseSocketReturn => {
   return {
     connected,
     joinRoom,
+    createRoom,
     leaveRoom,
     createElement,
     startGame,

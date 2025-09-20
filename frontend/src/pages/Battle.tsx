@@ -61,7 +61,7 @@ const Battle = () => {
   const [playerWon, setPlayerWon] = useState(false);
   const [roomJoined, setRoomJoined] = useState(false);
   const [isRoomCreator, setIsRoomCreator] = useState(false);
-  const [showLobby, setShowLobby] = useState(false);
+  const [showLobby, setShowLobby] = useState(true); // Start with lobby visible for room creators
   const [showGameOverlay, setShowGameOverlay] = useState(false);
   const [gameOverlayData, setGameOverlayData] = useState<any>(null);
   const [elementNotifications, setElementNotifications] = useState<any[]>([]);
@@ -86,26 +86,45 @@ const Battle = () => {
   useEffect(() => {
     if (connected && roomCode && !roomJoined) {
       const language = location.state?.language || 'en-US';
-      joinRoom(roomCode, `Battle Room ${roomCode}`, `Real-time battle room`, language);
-      setRoomJoined(true);
+      const isCreator = location.state?.isCreator || false;
+      console.log(`Attempting to join room ${roomCode} with language ${language}, isCreator: ${isCreator}`);
       
-      // Fetch language-specific initial elements
-      fetchInitialElements(language);
+      // If user is not the creator, hide lobby initially
+      if (!isCreator) {
+        setShowLobby(false);
+      }
+      
+      try {
+        // @ts-ignore - joinRoom accepts 4 parameters including language
+        joinRoom(roomCode, `Battle Room ${roomCode}`, `Real-time battle room`, language);
+        setRoomJoined(true);
+        
+        // Fetch language-specific initial elements
+        fetchInitialElements(language);
+      } catch (error) {
+        console.error('Error joining room:', error);
+        toast.error('Failed to join room');
+      }
     }
   }, [connected, roomCode, roomJoined, joinRoom, location.state]);
 
   // Update room info when currentRoom changes
   useEffect(() => {
     if (currentRoom) {
+      console.log('Current room data:', currentRoom);
       setTargetWord(currentRoom.target_element || "Unknown");
       setIsActive(currentRoom.gameStatus === 'active');
       setGameEnded(currentRoom.gameStatus === 'ended');
       
       // Check if current user is the room creator
-      setIsRoomCreator(currentRoom.createdBy?.userId === user?.id);
+      const isCreator = currentRoom.createdBy?.userId === user?.id;
+      setIsRoomCreator(isCreator);
+      console.log('Is room creator:', isCreator);
       
       // Show lobby if game is waiting, hide when game starts or ends
-      setShowLobby(currentRoom.gameStatus === 'waiting');
+      const shouldShowLobby = currentRoom.gameStatus === 'waiting';
+      console.log('Game status:', currentRoom.gameStatus, 'Should show lobby:', shouldShowLobby);
+      setShowLobby(shouldShowLobby);
       
       if (currentRoom.gameStatus === 'active' && currentRoom.startedAt) {
         // Calculate time left based on start time (2 minute game)
@@ -499,6 +518,9 @@ const Battle = () => {
   if (!isAuthenticated) {
     return null; // Will redirect to login
   }
+
+  // Debug logging
+  console.log('Battle render - showLobby:', showLobby, 'currentRoom:', currentRoom, 'isRoomCreator:', isRoomCreator);
 
   return (
     <div className="min-h-screen bg-background p-4">

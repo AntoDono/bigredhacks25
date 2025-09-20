@@ -523,7 +523,12 @@ io.on('connection', (socket) => {
 
       // Check if room exists, throw error if not
       if (!rooms[roomId]) {
-        createNewRoom(roomId, roomName, roomDescription, socket, language);
+        socket.emit('room_join_error', {
+          success: false,
+          message: 'Room does not exist',
+          error: 'Room not found'
+        });
+        return;
       }
 
       // Add user to room
@@ -559,6 +564,70 @@ io.on('connection', (socket) => {
       socket.emit('room_join_error', {
         success: false,
         message: 'Failed to join room',
+        error: error.message
+      });
+    }
+  });
+
+  // Handle creating a new room
+  socket.on('create_room', (data) => {
+    const { roomId, roomName, roomDescription, language } = data;
+    
+    try {
+      // Leave current room if in one
+      if (connectedUsers[socket.id].roomId) {
+        socket.leave(connectedUsers[socket.id].roomId);
+        
+        // Remove user from previous room's player list
+        const prevRoomId = connectedUsers[socket.id].roomId;
+        if (rooms[prevRoomId]) {
+          removePlayerFromRoom(socket.userId, prevRoomId);
+          
+          // Notify other players in the previous room
+          socket.to(prevRoomId).emit('player_left', {
+            userId: socket.userId,
+            userName: socket.user.name,
+            playersCount: Object.keys(rooms[prevRoomId].players).length
+          });
+        }
+      }
+
+      // Check if room already exists
+      if (rooms[roomId]) {
+        socket.emit('room_create_error', {
+          success: false,
+          message: 'Room already exists',
+          error: 'Room ID already taken'
+        });
+        return;
+      }
+
+      // Create new room
+      const newRoom = createNewRoom(roomId, roomName, roomDescription, socket, language);
+
+      // Add creator to room as leader
+      addPlayerToRoom(socket, roomId);
+
+      // Join socket room
+      socket.join(roomId);
+      connectedUsers[socket.id].roomId = roomId;
+
+      // Send success response to the creator
+      socket.emit('room_created', {
+        success: true,
+        roomId: roomId,
+        room: newRoom,
+        message: `Successfully created and joined ${newRoom.name}`,
+        isLeader: true
+      });
+
+      console.log(`🎯 User ${socket.user.name} created and joined room ${roomId}`);
+      
+    } catch (error) {
+      console.error('Error creating room:', error);
+      socket.emit('room_create_error', {
+        success: false,
+        message: 'Failed to create room',
         error: error.message
       });
     }

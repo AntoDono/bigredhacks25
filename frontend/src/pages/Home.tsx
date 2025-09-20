@@ -8,16 +8,19 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Users, Eye, Copy, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSocket } from "@/hooks/useSocket";
 import Profile from "@/components/Profile";
 import logo from "../assets/logo.png";
 
 const Home = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { connected, createRoom, currentRoom } = useSocket();
   const [roomCode, setRoomCode] = useState("");
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [generatedCode, setGeneratedCode] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("en-US");
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
 
   // Available languages for TTS
   const languages = [
@@ -38,19 +41,42 @@ const Home = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
+  // Handle room creation success
+  useEffect(() => {
+    if (currentRoom && isCreatingRoom) {
+      setIsCreatingRoom(false);
+      // Navigate to battle page with the created room using the generated code
+      navigate(`/battle/${generatedCode}`, { 
+        state: { 
+          language: selectedLanguage, 
+          isCreator: currentRoom.isLeader 
+        } 
+      });
+    }
+  }, [currentRoom, isCreatingRoom, navigate, selectedLanguage, generatedCode]);
+
   const generateRoomCode = () => {
+    if (!connected) {
+      toast.error("Not connected to game server. Please wait and try again.");
+      return;
+    }
+    
     const code = Math.random().toString(36).substring(2, 5).toUpperCase() + 
                  "-" + 
                  Math.random().toString(36).substring(2, 5).toUpperCase();
     setGeneratedCode(code);
-    setShowCreateRoom(true);
+    setIsCreatingRoom(true);
+    
+    // Create room on server
+    createRoom(
+      code, 
+      `Room ${code}`, 
+      `Room ${code} description`, 
+      selectedLanguage
+    );
   };
 
-  const createAndJoinRoom = () => {
-    toast.success("Room created! Joining room...");
-    // Navigate directly to battle page with language parameter
-    navigate(`/battle/${generatedCode}`, { state: { language: selectedLanguage } });
-  };
+
 
   const joinRoom = () => {
     if (roomCode.length < 7) {
@@ -157,10 +183,11 @@ const Home = () => {
                       </Select>
                     </div>
                     <Button 
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400"
                       onClick={generateRoomCode}
+                      disabled={!connected}
                     >
-                      Generate Room Code
+                      {connected ? "Create Room" : "Connecting..."}
                     </Button>
                   </div>
                 ) : (
@@ -191,9 +218,10 @@ const Home = () => {
                     <div className="flex gap-3">
                       <Button 
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={createAndJoinRoom}
+                        onClick={generateRoomCode}
+                        disabled={isCreatingRoom}
                       >
-                        Create & Join
+                        {isCreatingRoom ? "Creating..." : "Create & Join"}
                       </Button>
                       <Button 
                         variant="outline"
