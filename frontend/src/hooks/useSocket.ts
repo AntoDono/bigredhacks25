@@ -85,6 +85,11 @@ export const useSocket = (): UseSocketReturn => {
             toast.error(data.message);
           }
           break;
+        case 'endgame':
+          // Handle winner endgame event (sent via message_response to winner)
+          console.log('Winner endgame event received:', data);
+          setGameEvent(data);
+          break;
         default:
           if (data.success) {
             toast.success(data.message);
@@ -220,6 +225,9 @@ export const useSocket = (): UseSocketReturn => {
     socketClient.instance?.on('message_response', (data: any) => {
       if (data.type === 'create-element' && data.success) {
         callback(data.data);
+      } else if (data.type === 'endgame') {
+        // Pass the entire endgame event to the callback
+        callback(data);
       }
     });
   }, []);

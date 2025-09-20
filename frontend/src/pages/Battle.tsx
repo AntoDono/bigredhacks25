@@ -11,6 +11,8 @@ import ElementSidebar from "@/components/battle/ElementSidebar";
 import Timer from "@/components/battle/Timer";
 import StoryModal from "@/components/battle/StoryModal";
 import RoomLobby from "@/components/battle/RoomLobby";
+import GameOverlay from "@/components/notifications/GameOverlay";
+import ElementNotification from "@/components/notifications/ElementNotification";
 
 // Basic elements for the battle
 const INITIAL_ELEMENTS = [
@@ -54,6 +56,9 @@ const Battle = () => {
   const [roomJoined, setRoomJoined] = useState(false);
   const [isRoomCreator, setIsRoomCreator] = useState(false);
   const [showLobby, setShowLobby] = useState(false);
+  const [showGameOverlay, setShowGameOverlay] = useState(false);
+  const [gameOverlayData, setGameOverlayData] = useState<any>(null);
+  const [elementNotifications, setElementNotifications] = useState<any[]>([]);
 
   // Check authentication
   useEffect(() => {
@@ -100,6 +105,29 @@ const Battle = () => {
 
     const handleElementCreated = (data: any) => {
       console.log('Element created from backend:', data);
+      
+      // Check if this is actually an endgame event disguised as element creation
+      if (data.type === 'endgame') {
+        console.log('Endgame event received in element handler:', data);
+        const isWinner = data.data?.winner?.userId === user?.id;
+        setPlayerWon(isWinner);
+        setGameEnded(true);
+        setIsActive(false);
+        
+        displayGameOverlay(
+          isWinner ? 'victory' : 'defeat',
+          {
+            title: isWinner ? '🎉 Victory!' : '💔 Defeat',
+            message: isWinner 
+              ? 'Congratulations! You created the target element!' 
+              : `${data.data.winner?.userName} won the battle!`,
+            targetElement: data.data.targetElement,
+            winnerName: data.data.winner?.userName,
+            isPlayerWinner: isWinner
+          }
+        );
+        return;
+      }
       
       if (data.element) {
         // Create a new element object with proper formatting
@@ -149,14 +177,61 @@ const Battle = () => {
           return prev;
         });
 
-        // Show success message
-        toast.success(`Created: ${data.element}!`);
+        // Show custom element notification
+        showElementNotification(
+          data.element,
+          data.emoji || '✨',
+          `${pendingCombination?.element1.text || ''} + ${pendingCombination?.element2.text || ''}`,
+          undefined,
+          true
+        );
       }
+      
     };
 
     const handleGameEvents = (data: any) => {
       console.log('Game event:', data);
-      // Handle other game events like player discoveries, game end, etc.
+      
+      switch (data.type) {
+        case 'player-discovered-element':
+          // Show notification for other players' discoveries
+          showElementNotification(
+            data.data.element,
+            '🔬', // Default emoji for other players
+            data.data.combination,
+            data.data.userName,
+            false
+          );
+          break;
+          
+        case 'endgame':
+          setGameEnded(true);
+          setIsActive(false);
+          
+          const isWinner = data.data.winner?.userId === user?.id;
+          setPlayerWon(isWinner);
+          
+          displayGameOverlay(
+            isWinner ? 'victory' : 'defeat',
+            {
+              title: isWinner ? '🎉 Victory!' : '💔 Defeat',
+              message: isWinner 
+                ? 'Congratulations! You created the target element!' 
+                : `${data.data.winner?.userName} won the battle!`,
+              targetElement: data.data.targetElement,
+              winnerName: data.data.winner?.userName,
+              isPlayerWinner: isWinner
+            }
+          );
+          break;
+          
+        case 'game-started':
+          toast.success(data.data.message);
+          break;
+          
+        default:
+          console.log('Unhandled game event:', data);
+      }
     };
 
     onElementCreated(handleElementCreated);
@@ -180,6 +255,14 @@ const Battle = () => {
           setIsActive(false);
           setGameEnded(true);
           console.log('Timer ended - game over');
+          
+          // Show time up overlay
+          displayGameOverlay('timeup', {
+            title: '⏰ Time\'s Up!',
+            message: 'The battle has ended due to time limit.',
+            targetElement: targetWord
+          });
+          
           return 0;
         }
         return time - 1;
@@ -248,6 +331,31 @@ const Battle = () => {
 
   const handleLeaveRoom = () => {
     navigate('/');
+  };
+
+  const showElementNotification = (element: string, emoji: string, combination?: string, playerName?: string, isOwnDiscovery = true) => {
+    const id = `notification-${Date.now()}-${Math.random()}`;
+    const notification = {
+      id,
+      element,
+      emoji,
+      combination,
+      playerName,
+      isOwnDiscovery,
+      show: true
+    };
+    
+    setElementNotifications(prev => [...prev, notification]);
+    
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+      setElementNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4000);
+  };
+
+  const displayGameOverlay = (type: 'victory' | 'defeat' | 'timeup', data: any) => {
+    setGameOverlayData({ type, ...data });
+    setShowGameOverlay(true);
   };
 
   return (
@@ -401,6 +509,51 @@ const Battle = () => {
         onStartGame={handleStartGame}
         onLeaveRoom={handleLeaveRoom}
       />
+
+      {/* Game Overlay */}
+      <GameOverlay
+        show={showGameOverlay}
+        type={gameOverlayData?.type || 'victory'}
+        title={gameOverlayData?.title || ''}
+        message={gameOverlayData?.message || ''}
+        targetElement={gameOverlayData?.targetElement}
+        winnerName={gameOverlayData?.winnerName}
+        isPlayerWinner={gameOverlayData?.isPlayerWinner}
+        onClose={() => setShowGameOverlay(false)}
+        onPlayAgain={() => {
+          setShowGameOverlay(false);
+          restartBattle();
+        }}
+        onViewStory={() => {
+          setShowGameOverlay(false);
+          setShowStory(true);
+        }}
+      />
+
+      {/* Element Notifications */}
+      <div className="fixed top-4 right-4 z-40 space-y-2">
+        {elementNotifications.map((notification, index) => (
+          <div
+            key={notification.id}
+            style={{ 
+              transform: `translateY(${index * 10}px)`,
+              zIndex: 40 - index 
+            }}
+          >
+            <ElementNotification
+              show={notification.show}
+              element={notification.element}
+              emoji={notification.emoji}
+              combination={notification.combination}
+              playerName={notification.playerName}
+              isOwnDiscovery={notification.isOwnDiscovery}
+              onClose={() => {
+                setElementNotifications(prev => prev.filter(n => n.id !== notification.id));
+              }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

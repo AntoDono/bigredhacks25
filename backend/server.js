@@ -32,7 +32,6 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 var target_elements = [
-    'computer',
     'house',
     'sword',
     'cloud',
