@@ -71,6 +71,26 @@ const Profile = () => {
           <p><strong>Member since:</strong> {formatDate(user.createdAt)}</p>
         </div>
         
+        {/* Game Statistics */}
+        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+          <h3 className="font-semibold text-gray-900 text-sm">Battle Statistics</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{user.gamesWon || 0}</div>
+              <div className="text-gray-600">Wins</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{user.gamesPlayed || 0}</div>
+              <div className="text-gray-600">Games</div>
+            </div>
+          </div>
+          {user.gamesPlayed > 0 && (
+            <div className="text-center text-xs text-gray-500 mt-2">
+              Win Rate: {Math.round(((user.gamesWon || 0) / user.gamesPlayed) * 100)}%
+            </div>
+          )}
+        </div>
+        
         <div className="space-y-2">
           <Button 
             onClick={logout}

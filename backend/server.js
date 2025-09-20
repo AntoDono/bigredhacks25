@@ -7,7 +7,7 @@ const { create_element } = require('./llm');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('./db'); // Connect to database
-const { User, InitialElementsAudio } = require('./schema');
+const { User, Game, InitialElementsAudio } = require('./schema');
 const { getInitialElements } = require('./languages');
 
 const app = express();
@@ -270,6 +270,9 @@ const checkForGameEnd = (socket, roomId, createdElementData) => {
     room.winner = socket.userId;
     room.endedAt = new Date();
     
+    // Save game to database
+    await saveGameToDatabase(room, roomId);
+    
     // Broadcast endgame to all players in room
     socket.to(roomId).emit('message_broadcast', {
       type: 'endgame',
@@ -524,7 +527,7 @@ const handleCreateElement = async (socket, data) => {
     
     // THEN check for game end condition (after element is sent)
     if (roomId) {
-      gameEnded = checkForGameEnd(socket, roomId, result);
+      gameEnded = await checkForGameEnd(socket, roomId, result);
     }
     
     console.log(`✨ Element created: ${newElement} by ${socket.user.name}`);
@@ -883,6 +886,8 @@ app.post('/api/users', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        gamesWon: user.gamesWon || 0,
+        gamesPlayed: user.gamesPlayed || 0,
         createdAt: user.createdAt
       },
       token
@@ -929,6 +934,8 @@ app.post('/api/login', async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        gamesWon: user.gamesWon || 0,
+        gamesPlayed: user.gamesPlayed || 0,
         createdAt: user.createdAt
       },
       token
