@@ -258,7 +258,7 @@ async function saveToUserVocabulary(userId, elementData, languageCode) {
   }
 }
 
-const checkForGameEnd = (socket, roomId, createdElementData) => {
+const checkForGameEnd = async(socket, roomId, createdElementData) => {
   const room = rooms[roomId];
   if (!room || room.gameStatus === 'ended') return false;
   
