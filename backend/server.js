@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const socketIo = require('socket.io');
 require('dotenv').config();
 const { create_element } = require('./llm');
 const bcrypt = require('bcryptjs');
@@ -8,6 +10,14 @@ require('./db'); // Connect to database
 const { User } = require('./schema');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "*", // Configure this properly in production
+    methods: ["GET", "POST"]
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -15,6 +25,551 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+
+var target_elements = [
+    'computer',
+    'house',
+    'sword',
+    'cloud',
+    'cloud'
+]
+
+var rooms = {}
+/*
+rooms = {
+    "random-room-id": {
+        "name": "Room 1",
+        "description": "Room 1 description",
+        "target_element": "element1",
+        "players": [id1, id2, id3],
+        "player_stats":{
+            "id1": {
+                "score": 0,
+                "elements": []
+            },
+            "id2": {
+                "score": 0,
+                "elements": []
+            }
+        }
+    }
+}
+*/
+
+// Store connected users
+var connectedUsers = {}; // { socketId: { userId, user, roomId } }
+
+// Socket.IO authentication middleware
+const socketAuth = async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    
+    if (!token) {
+      return next(new Error('Authentication error: No token provided'));
+    }
+
+    // Verify JWT token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    // Get user from database
+    const user = await User.findById(decoded.userId).select('-password');
+    if (!user) {
+      return next(new Error('Authentication error: User not found'));
+    }
+
+    // Attach user info to socket
+    socket.userId = user._id.toString();
+    socket.user = user;
+    
+    next();
+  } catch (error) {
+    next(new Error('Authentication error: Invalid token'));
+  }
+};
+
+// Apply authentication middleware to Socket.IO
+io.use(socketAuth);
+
+// Utility functions
+const getRandomTargetElement = () => {
+  const randomIndex = Math.floor(Math.random() * target_elements.length);
+  return target_elements[randomIndex];
+};
+
+const createNewRoom = (roomId, roomName, roomDescription, creatorSocket) => {
+  const targetElement = getRandomTargetElement();
+  
+  const newRoom = {
+    name: roomName || `Room ${roomId}`,
+    description: roomDescription || `Room ${roomId} description`,
+    target_element: targetElement,
+    players: [],
+    player_stats: {},
+    gameStatus: 'waiting', // 'waiting', 'active', or 'ended'
+    winner: null,
+    createdBy: {
+      userId: creatorSocket.userId,
+      userName: creatorSocket.user.name
+    },
+    createdAt: new Date()
+  };
+  
+  rooms[roomId] = newRoom;
+  console.log(`🎯 Room ${roomId} created by ${creatorSocket.user.name} with target element: ${targetElement}`);
+  
+  return newRoom;
+};
+
+const addPlayerToRoom = (socket, roomId) => {
+  const room = rooms[roomId];
+  if (!room) return false;
+  
+  // Add user to room if not already in it
+  if (!room.players.includes(socket.userId)) {
+    room.players.push(socket.userId);
+    room.player_stats[socket.userId] = {
+      score: 0,
+      elements: []
+    };
+  }
+  
+  return true;
+};
+
+const removePlayerFromRoom = (userId, roomId) => {
+  const room = rooms[roomId];
+  if (!room) return false;
+  
+  // Remove user from room
+  room.players = room.players.filter(playerId => playerId !== userId);
+  
+  // Remove player stats
+  if (room.player_stats[userId]) {
+    delete room.player_stats[userId];
+  }
+  
+  return true;
+};
+
+const checkForGameEnd = (socket, roomId, createdElement) => {
+  const room = rooms[roomId];
+  if (!room || room.gameStatus === 'ended') return false;
+  
+  // Check if created element matches target
+  if (createdElement.toLowerCase() === room.target_element.toLowerCase()) {
+    // End the game
+    room.gameStatus = 'ended';
+    room.winner = socket.userId;
+    room.endedAt = new Date();
+    
+    // Broadcast endgame to all players in room
+    socket.to(roomId).emit('message_broadcast', {
+      type: 'endgame',
+      data: {
+        winner: {
+          userId: socket.userId,
+          userName: socket.user.name
+        },
+        targetElement: room.target_element,
+        finalScores: room.player_stats,
+        gameEndTime: room.endedAt
+      }
+    });
+    
+    // Send endgame to the winner too
+    socket.emit('message_response', {
+      type: 'endgame',
+      success: true,
+      message: `Congratulations! You won by creating the target element: ${room.target_element}`,
+      data: {
+        winner: {
+          userId: socket.userId,
+          userName: socket.user.name
+        },
+        targetElement: room.target_element,
+        finalScores: room.player_stats,
+        gameEndTime: room.endedAt
+      }
+    });
+    
+    console.log(`🏆 Game ended! ${socket.user.name} won room ${roomId} by creating ${createdElement}`);
+    return true;
+  }
+  
+  return false;
+};
+
+const handleStartGame = (socket, data) => {
+  try {
+    const userInfo = connectedUsers[socket.id];
+    const roomId = userInfo?.roomId;
+    
+    if (!roomId || !rooms[roomId]) {
+      socket.emit('message_response', {
+        type: 'start-game',
+        success: false,
+        message: 'You are not in a room',
+        data: null
+      });
+      return;
+    }
+    
+    const room = rooms[roomId];
+    
+    // Check if user is the room creator
+    if (room.createdBy.userId !== socket.userId) {
+      socket.emit('message_response', {
+        type: 'start-game',
+        success: false,
+        message: 'Only the room creator can start the game',
+        data: null
+      });
+      return;
+    }
+    
+    // Check if game is already active or ended
+    if (room.gameStatus === 'active') {
+      socket.emit('message_response', {
+        type: 'start-game',
+        success: false,
+        message: 'Game is already active',
+        data: null
+      });
+      return;
+    }
+    
+    if (room.gameStatus === 'ended') {
+      socket.emit('message_response', {
+        type: 'start-game',
+        success: false,
+        message: 'Game has already ended',
+        data: null
+      });
+      return;
+    }
+    
+    // Start the game
+    room.gameStatus = 'active';
+    room.startedAt = new Date();
+    
+    // Broadcast game start to all players in room
+    io.to(roomId).emit('message_broadcast', {
+      type: 'game-started',
+      data: {
+        message: `Game started by ${socket.user.name}!`,
+        targetElement: room.target_element,
+        startedBy: socket.user.name,
+        startTime: room.startedAt
+      }
+    });
+    
+    console.log(`🎮 Game started in room ${roomId} by ${socket.user.name}`);
+    
+  } catch (error) {
+    console.error('Error starting game:', error);
+    socket.emit('message_response', {
+      type: 'start-game',
+      success: false,
+      message: 'Failed to start game',
+      error: error.message,
+      data: null
+    });
+  }
+};
+
+// Socket.IO message handlers
+const validateCreateElementData = (data) => {
+  const { element1, element2 } = data;
+  return element1 && element2;
+};
+
+const updatePlayerStats = (socket, roomId, newElement) => {
+  const room = rooms[roomId];
+  if (!room || room.gameStatus === 'ended') return false;
+  
+  if (!room.player_stats[socket.userId].elements) {
+    room.player_stats[socket.userId].elements = [];
+  }
+  
+  // Add the new element to player's discovered elements if not already discovered
+  if (!room.player_stats[socket.userId].elements.includes(newElement)) {
+    room.player_stats[socket.userId].elements.push(newElement);
+    room.player_stats[socket.userId].score += 10; // Award points for new discovery
+    return true; // New element discovered
+  }
+  
+  return false; // Element already known
+};
+
+const broadcastElementDiscovery = (socket, roomId, element, combination) => {
+  const room = rooms[roomId];
+  if (!room) return;
+  
+  socket.to(roomId).emit('message_broadcast', {
+    type: 'player-discovered-element',
+    data: {
+      userId: socket.userId,
+      userName: socket.user.name,
+      element: element,
+      combination: combination,
+      newScore: room.player_stats[socket.userId].score
+    }
+  });
+};
+
+const handleCreateElement = async (socket, data) => {
+  try {
+    // Validate input
+    if (!validateCreateElementData(data)) {
+      socket.emit('message_response', {
+        type: 'create-element',
+        success: false,
+        message: 'Both element1 and element2 are required',
+        data: null
+      });
+      return;
+    }
+
+    const { element1, element2 } = data;
+    console.log(`🧪 Creating element: ${element1} + ${element2} for user ${socket.user.name}`);
+    
+    // Call the create_element function from llm.js
+    const result = await create_element(element1, element2);
+    const newElement = result.element;
+    const combination = `${element1} + ${element2}`;
+    
+    // Get user's current room
+    const userInfo = connectedUsers[socket.id];
+    const roomId = userInfo?.roomId;
+    
+    let gameEnded = false;
+    let roomStats = null;
+    
+    // Update player stats if user is in a room
+    if (roomId && rooms[roomId]) {
+      const room = rooms[roomId];
+      
+      // Check game status
+      if (room.gameStatus === 'waiting') {
+        socket.emit('message_response', {
+          type: 'create-element',
+          success: false,
+          message: 'Game has not started yet. Waiting for room creator to start the game.',
+          data: {
+            element: newElement,
+            gameStatus: 'waiting'
+          }
+        });
+        return;
+      }
+      
+      if (room.gameStatus === 'ended') {
+        socket.emit('message_response', {
+          type: 'create-element',
+          success: false,
+          message: 'Game has already ended',
+          data: {
+            element: newElement,
+            gameStatus: 'ended',
+            winner: room.winner
+          }
+        });
+        return;
+      }
+      
+      // Update player stats
+      const isNewDiscovery = updatePlayerStats(socket, roomId, newElement);
+      
+      // Check for game end condition
+      gameEnded = checkForGameEnd(socket, roomId, newElement);
+      
+      // If game hasn't ended and it's a new discovery, broadcast to room
+      if (!gameEnded && isNewDiscovery) {
+        broadcastElementDiscovery(socket, roomId, newElement, combination);
+      }
+      
+      roomStats = {
+        score: room.player_stats[socket.userId].score,
+        elementsDiscovered: room.player_stats[socket.userId].elements.length,
+        targetElement: room.target_element,
+        gameStatus: room.gameStatus
+      };
+    }
+    
+    // Send success response back to the user (unless game ended, which sends its own response)
+    if (!gameEnded) {
+      socket.emit('message_response', {
+        type: 'create-element',
+        success: true,
+        message: 'Element created successfully',
+        data: {
+          element: newElement,
+          combination: combination,
+          ...(roomStats ? { roomStats } : {})
+        }
+      });
+    }
+    
+    console.log(`✨ Element created: ${newElement} by ${socket.user.name}`);
+    
+  } catch (error) {
+    console.error('Error creating element:', error);
+    socket.emit('message_response', {
+      type: 'create-element',
+      success: false,
+      message: 'Failed to create element',
+      error: error.message,
+      data: null
+    });
+  }
+};
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log(`🔌 User connected: ${socket.user.name} (${socket.userId})`);
+  
+  // Store connected user
+  connectedUsers[socket.id] = {
+    userId: socket.userId,
+    user: socket.user,
+    roomId: null
+  };
+
+  // Handle user joining a room
+  socket.on('join_room', (data) => {
+    const { roomId, roomName, roomDescription } = data;
+    
+    try {
+      // Leave current room if in one
+      if (connectedUsers[socket.id].roomId) {
+        socket.leave(connectedUsers[socket.id].roomId);
+        
+        // Remove user from previous room's player list
+        const prevRoomId = connectedUsers[socket.id].roomId;
+        if (rooms[prevRoomId]) {
+          removePlayerFromRoom(socket.userId, prevRoomId);
+          
+          // Notify other players in the previous room
+          socket.to(prevRoomId).emit('player_left', {
+            userId: socket.userId,
+            userName: socket.user.name,
+            playersCount: rooms[prevRoomId].players.length
+          });
+        }
+      }
+
+      // Create room if it doesn't exist
+      if (!rooms[roomId]) {
+        createNewRoom(roomId, roomName, roomDescription, socket);
+      }
+
+      // Add user to room
+      const addedSuccessfully = addPlayerToRoom(socket, roomId);
+
+      // Join socket room
+      socket.join(roomId);
+      connectedUsers[socket.id].roomId = roomId;
+
+      // Send success response to the joining user
+      socket.emit('room_joined', {
+        success: true,
+        roomId: roomId,
+        room: rooms[roomId],
+        message: `Successfully joined ${rooms[roomId].name}`
+      });
+
+      // Broadcast to all players in the room (including the joining user)
+      io.to(roomId).emit('message_broadcast', {
+        type: 'player_joined',
+        data: {
+          userId: socket.userId,
+          userName: socket.user.name,
+          playersCount: rooms[roomId].players.length,
+          message: `${socket.user.name} joined the room`
+        }
+      });
+
+      console.log(`👥 User ${socket.user.name} joined room ${roomId}`);
+      
+    } catch (error) {
+      console.error('Error joining room:', error);
+      socket.emit('room_join_error', {
+        success: false,
+        message: 'Failed to join room',
+        error: error.message
+      });
+    }
+  });
+
+  // Handle incoming messages
+  socket.on('message', async (messageData) => {
+    try {
+      const { type, data } = messageData;
+      
+      if (!type) {
+        socket.emit('message_error', {
+          success: false,
+          message: 'Message type is required',
+          originalMessage: messageData
+        });
+        return;
+      }
+
+      console.log(`📨 Message from ${socket.user.name}: ${type}`, data);
+
+      switch (type) {
+        case 'create-element':
+          await handleCreateElement(socket, data);
+          break;
+        
+        case 'start-game':
+          handleStartGame(socket, data);
+          break;
+        
+        default:
+          socket.emit('message_error', {
+            success: false,
+            message: `Unknown message type: ${type}`,
+            originalMessage: messageData
+          });
+          break;
+      }
+    } catch (error) {
+      console.error('Error handling message:', error);
+      socket.emit('message_error', {
+        success: false,
+        message: 'Failed to process message',
+        error: error.message,
+        originalMessage: messageData
+      });
+    }
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log(`🔌 User disconnected: ${socket.user.name} (${socket.userId})`);
+    
+    const userInfo = connectedUsers[socket.id];
+    if (userInfo && userInfo.roomId) {
+      const roomId = userInfo.roomId;
+      
+      // Remove user from room
+      if (rooms[roomId]) {
+        removePlayerFromRoom(socket.userId, roomId);
+        
+        // Notify other players
+        socket.to(roomId).emit('player_left', {
+          userId: socket.userId,
+          userName: socket.user.name,
+          playersCount: rooms[roomId].players.length
+        });
+      }
+    }
+    
+    // Remove from connected users
+    delete connectedUsers[socket.id];
+  });
+});
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
@@ -183,10 +738,11 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Access server at: http://localhost:${PORT}`);
+  console.log(`🔌 Socket.IO server ready`);
 });
 
-module.exports = app;
+module.exports = { app, server, io };
