@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { Plus, Users, Eye, Copy, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import Profile from "@/components/Profile";
+import logo from "../assets/logo.png";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -15,6 +17,20 @@ const Home = () => {
   const [roomCode, setRoomCode] = useState("");
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [generatedCode, setGeneratedCode] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("en-US");
+
+  // Available languages for TTS
+  const languages = [
+    { code: "en-US", name: "English (US)" },
+    { code: "es-ES", name: "Spanish (Spain)" },
+    { code: "fr-FR", name: "French" },
+    { code: "de-DE", name: "German" },
+    { code: "it-IT", name: "Italian" },
+    { code: "pt-BR", name: "Portuguese (Brazil)" },
+    { code: "ja-JP", name: "Japanese" },
+    { code: "ko-KR", name: "Korean" },
+    { code: "zh-CN", name: "Chinese (Mandarin)" }
+  ];
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -27,9 +43,13 @@ const Home = () => {
                  "-" + 
                  Math.random().toString(36).substring(2, 5).toUpperCase();
     setGeneratedCode(code);
+    setShowCreateRoom(true);
+  };
+
+  const createAndJoinRoom = () => {
     toast.success("Room created! Joining room...");
-    // Navigate directly to battle page - room lobby will show there
-    navigate(`/battle/${code}`);
+    // Navigate directly to battle page with language parameter
+    navigate(`/battle/${generatedCode}`, { state: { language: selectedLanguage } });
   };
 
   const joinRoom = () => {
@@ -54,7 +74,7 @@ const Home = () => {
   };
 
   const startBattle = () => {
-    navigate(`/battle/${generatedCode}`);
+    navigate(`/battle/${generatedCode}`, { state: { language: selectedLanguage } });
   };
 
   if (isLoading) {
@@ -73,18 +93,28 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero p-4">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="container mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="animate-slide-up">
-            <h1 className="text-4xl font-bold text-white mb-2">Welcome back, {user?.name}!</h1>
-            <p className="text-white/80 text-lg">Ready for a language battle?</p>
+        {/* Clean Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+          <div className="mb-4 lg:mb-0">
+            <div className="flex items-center mb-3">
+              <img 
+                src={logo} 
+                alt="Duelingo Logo" 
+                className="h-12 w-12 mr-3"
+              />
+              <span className="text-xl font-bold text-gray-900">Duelingo</span>
+            </div>
+            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+              Welcome back, {user?.name}!
+            </h1>
+            <p className="text-gray-600 text-lg">Ready for your next language battle?</p>
           </div>
           
           <Button
-            variant="ghost"
-            className="text-white hover:bg-white/10"
+            variant="outline"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50"
             onClick={logout}
           >
             <LogOut className="w-4 h-4 mr-2" />
@@ -92,59 +122,83 @@ const Home = () => {
           </Button>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Actions Grid */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-6">
             {/* Create Room */}
-            <Card className="card-battle hover:shadow-glow transition-all duration-300 animate-slide-up">
+            <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center">
-                    <Plus className="w-6 h-6 text-white" />
+                <CardTitle className="flex items-center gap-3 text-2xl text-gray-900">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Plus className="w-6 h-6 text-blue-600" />
                   </div>
-                  Create Room
+                  Create Battle Room
                 </CardTitle>
-                <CardDescription className="text-base">
+                <CardDescription className="text-gray-600">
                   Start a new battle room and invite friends to join
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {!showCreateRoom ? (
-                  <Button 
-                    className="w-full btn-hero h-12"
-                    onClick={generateRoomCode}
-                  >
-                    Generate Room Code
-                  </Button>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">Room Language</Label>
+                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {languages.map((lang) => (
+                            <SelectItem key={lang.code} value={lang.code}>
+                              {lang.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button 
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={generateRoomCode}
+                    >
+                      Generate Room Code
+                    </Button>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="text-center">
-                      <Label className="text-sm font-medium text-muted-foreground">Your Room Code</Label>
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="room-code-input bg-muted rounded-lg p-4 flex-1">
+                      <Label className="text-sm font-medium text-gray-700 mb-2 block">Your Room Code</Label>
+                      <div className="flex items-center gap-2">
+                        <div className="room-code-input bg-gray-50 border border-gray-300 rounded-lg p-4 flex-1 text-gray-900 font-mono text-xl">
                           {generatedCode}
                         </div>
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={copyRoomCode}
-                          className="h-14 w-14"
+                          className="border-gray-300 text-gray-700 hover:bg-gray-50"
                         >
                           <Copy className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="text-center">
+                      <Label className="text-sm text-gray-600">
+                        Language: {languages.find(l => l.code === selectedLanguage)?.name}
+                      </Label>
+                    </div>
+                    
+                    <div className="flex gap-3">
                       <Button 
-                        className="flex-1 btn-battle"
-                        onClick={startBattle}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={createAndJoinRoom}
                       >
-                        Start Battle
+                        Create & Join
                       </Button>
                       <Button 
                         variant="outline"
                         onClick={() => setShowCreateRoom(false)}
+                        className="border-gray-300 text-gray-700 hover:bg-gray-50"
                       >
                         New Code
                       </Button>
@@ -155,21 +209,21 @@ const Home = () => {
             </Card>
 
             {/* Join/Spectate Room */}
-            <Card className="card-battle hover:shadow-glow transition-all duration-300 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <div className="w-12 h-12 bg-gradient-battle rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
+                <CardTitle className="flex items-center gap-3 text-2xl text-gray-900">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Users className="w-6 h-6 text-green-600" />
                   </div>
                   Join Battle
                 </CardTitle>
-                <CardDescription className="text-base">
+                <CardDescription className="text-gray-600">
                   Enter a room code to join or spectate a battle
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="roomCode" className="text-sm font-medium mb-2 block">
+                  <Label htmlFor="roomCode" className="text-sm font-medium text-gray-700 mb-2 block">
                     Room Code
                   </Label>
                   <Input
@@ -177,14 +231,14 @@ const Home = () => {
                     placeholder="XXX-XXX"
                     value={roomCode}
                     onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                    className="room-code-input h-12"
+                    className="room-code-input border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                     maxLength={7}
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <Button 
-                    className="btn-learning h-11"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={joinRoom}
                     disabled={roomCode.length < 7}
                   >
@@ -195,7 +249,7 @@ const Home = () => {
                     variant="outline"
                     onClick={spectateRoom}
                     disabled={roomCode.length < 7}
-                    className="h-11"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     <Eye className="w-4 h-4 mr-2" />
                     Spectate
@@ -205,31 +259,31 @@ const Home = () => {
             </Card>
 
             {/* Game Info */}
-            <Card className="card-battle animate-slide-up bg-white/5 backdrop-blur-sm border-white/20" style={{ animationDelay: '0.2s' }}>
+            <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
               <CardContent className="p-8">
-                <div className="text-center text-white">
-                  <h3 className="text-2xl font-bold mb-4">How to Play Duelingo</h3>
-                  <div className="grid md:grid-cols-3 gap-6 text-sm">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold mb-6 text-gray-900">How to Play Duelingo</h3>
+                  <div className="grid md:grid-cols-3 gap-6">
                     <div>
-                      <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                         <span className="text-xl">🎯</span>
                       </div>
-                      <h4 className="font-semibold mb-2">Battle Objective</h4>
-                      <p className="text-white/80">Race to create the target word using drag-and-drop combinations</p>
+                      <h4 className="font-semibold mb-2 text-gray-900">Battle Objective</h4>
+                      <p className="text-gray-600 text-sm">Race to create the target word using drag-and-drop combinations</p>
                     </div>
                     <div>
-                      <div className="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                         <span className="text-xl">⏱️</span>
                       </div>
-                      <h4 className="font-semibold mb-2">60 Second Timer</h4>
-                      <p className="text-white/80">Quick battles test your vocabulary skills under pressure</p>
+                      <h4 className="font-semibold mb-2 text-gray-900">60 Second Timer</h4>
+                      <p className="text-gray-600 text-sm">Quick battles test your vocabulary skills under pressure</p>
                     </div>
                     <div>
-                      <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                         <span className="text-xl">📖</span>
                       </div>
-                      <h4 className="font-semibold mb-2">Learning Stories</h4>
-                      <p className="text-white/80">Your creations become part of an epic adventure story</p>
+                      <h4 className="font-semibold mb-2 text-gray-900">Learning Stories</h4>
+                      <p className="text-gray-600 text-sm">Your creations become part of an adventure story</p>
                     </div>
                   </div>
                 </div>

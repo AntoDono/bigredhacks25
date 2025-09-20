@@ -86,6 +86,11 @@ export const useSocket = (): UseSocketReturn => {
             toast.error(data.message);
           }
           break;
+        case 'endgame':
+          // Handle winner endgame event (sent via message_response to winner)
+          console.log('Winner endgame event received:', data);
+          setGameEvent(data);
+          break;
         default:
           if (data.success) {
             toast.success(data.message);
@@ -200,14 +205,14 @@ export const useSocket = (): UseSocketReturn => {
   }, [connected, currentRoom]);
 
   // Socket methods
-  const joinRoom = useCallback((roomId: string, roomName?: string, roomDescription?: string) => {
+  const joinRoom = useCallback((roomId: string, roomName?: string, roomDescription?: string, language?: string) => {
     if (!connected) {
       toast.error('Not connected to game server');
       return;
     }
 
     setRoomError(null);
-    socketClient.joinRoom({ roomId, roomName, roomDescription });
+    socketClient.joinRoom({ roomId, roomName, roomDescription, language });
   }, [connected]);
 
   const leaveRoom = useCallback(() => {
@@ -241,7 +246,11 @@ export const useSocket = (): UseSocketReturn => {
   const onElementCreated = useCallback((callback: (elementData: any) => void) => {
     socketClient.instance?.on('message_response', (data: any) => {
       if (data.type === 'create-element' && data.success) {
+        // Pass the full response data so Battle component can access audio_b64
         callback(data.data);
+      } else if (data.type === 'endgame') {
+        // Pass the entire endgame event to the callback
+        callback(data);
       }
     });
   }, []);
