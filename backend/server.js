@@ -23,7 +23,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173'], // Allow Next.js dev server
+  origin: true, // Allow all origins
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
@@ -46,8 +46,21 @@ rooms = {
         "name": "Room 1",
         "description": "Room 1 description",
         "target_element": "element1",
-        "players": [id1, id2, id3],
-        "player_stats":{
+        "players": {
+            "id1": {
+                "name": "Player Name 1",
+                "joinedAt": Date
+            },
+            "id2": {
+                "name": "Player Name 2", 
+                "joinedAt": Date
+            },
+            "id3": {
+                "name": "Player Name 3",
+                "joinedAt": Date
+            }
+        },
+        "player_stats": {
             "id1": {
                 "score": 0,
                 "elements": []
@@ -55,8 +68,21 @@ rooms = {
             "id2": {
                 "score": 0,
                 "elements": []
+            },
+            "id3": {
+                "score": 0,
+                "elements": []
             }
-        }
+        },
+        "gameStatus": "waiting", // 'waiting', 'active', or 'ended'
+        "winner": null,
+        "createdBy": {
+            "userId": "id1",
+            "userName": "Creator Name"
+        },
+        "createdAt": Date,
+        "startedAt": Date, // When game started
+        "endedAt": Date    // When game ended
     }
 }
 */
@@ -108,7 +134,7 @@ const createNewRoom = (roomId, roomName, roomDescription, creatorSocket) => {
     name: roomName || `Room ${roomId}`,
     description: roomDescription || `Room ${roomId} description`,
     target_element: targetElement,
-    players: [],
+    players: {}, // Changed to object to store both ID and name
     player_stats: {},
     gameStatus: 'waiting', // 'waiting', 'active', or 'ended'
     winner: null,
@@ -130,8 +156,11 @@ const addPlayerToRoom = (socket, roomId) => {
   if (!room) return false;
   
   // Add user to room if not already in it
-  if (!room.players.includes(socket.userId)) {
-    room.players.push(socket.userId);
+  if (!room.players[socket.userId]) {
+    room.players[socket.userId] = {
+      name: socket.user.name,
+      joinedAt: new Date()
+    };
     room.player_stats[socket.userId] = {
       score: 0,
       elements: []
@@ -146,7 +175,9 @@ const removePlayerFromRoom = (userId, roomId) => {
   if (!room) return false;
   
   // Remove user from room
-  room.players = room.players.filter(playerId => playerId !== userId);
+  if (room.players[userId]) {
+    delete room.players[userId];
+  }
   
   // Remove player stats
   if (room.player_stats[userId]) {
@@ -350,6 +381,7 @@ const handleCreateElement = async (socket, data) => {
     
     let gameEnded = false;
     let roomStats = null;
+    let isNewDiscovery = false;
     
     // Update player stats if user is in a room
     if (roomId && rooms[roomId]) {
@@ -384,15 +416,7 @@ const handleCreateElement = async (socket, data) => {
       }
       
       // Update player stats
-      const isNewDiscovery = updatePlayerStats(socket, roomId, newElement);
-      
-      // Check for game end condition
-      gameEnded = checkForGameEnd(socket, roomId, newElement);
-      
-      // If game hasn't ended and it's a new discovery, broadcast to room
-      if (!gameEnded && isNewDiscovery) {
-        broadcastElementDiscovery(socket, roomId, newElement, combination);
-      }
+      isNewDiscovery = updatePlayerStats(socket, roomId, newElement);
       
       roomStats = {
         score: room.player_stats[socket.userId].score,
@@ -402,19 +426,27 @@ const handleCreateElement = async (socket, data) => {
       };
     }
     
-    // Send success response back to the user (unless game ended, which sends its own response)
-    if (!gameEnded) {
-      socket.emit('message_response', {
-        type: 'create-element',
-        success: true,
-        message: 'Element created successfully',
-        data: {
-          element: newElement,
-          emoji: newEmoji,
-          combination: combination,
-          ...(roomStats ? { roomStats } : {})
-        }
-      });
+    // ALWAYS send success response back to the user first
+    socket.emit('message_response', {
+      type: 'create-element',
+      success: true,
+      message: 'Element created successfully',
+      data: {
+        element: newElement,
+        emoji: newEmoji,
+        combination: combination,
+        ...(roomStats ? { roomStats } : {})
+      }
+    });
+    
+    // If it's a new discovery, broadcast to room
+    if (roomId && isNewDiscovery) {
+      broadcastElementDiscovery(socket, roomId, newElement, combination);
+    }
+    
+    // THEN check for game end condition (after element is sent)
+    if (roomId) {
+      gameEnded = checkForGameEnd(socket, roomId, newElement);
     }
     
     console.log(`✨ Element created: ${newElement} by ${socket.user.name}`);
@@ -460,7 +492,7 @@ io.on('connection', (socket) => {
           socket.to(prevRoomId).emit('player_left', {
             userId: socket.userId,
             userName: socket.user.name,
-            playersCount: rooms[prevRoomId].players.length
+            playersCount: Object.keys(rooms[prevRoomId].players).length
           });
         }
       }
@@ -491,7 +523,7 @@ io.on('connection', (socket) => {
         data: {
           userId: socket.userId,
           userName: socket.user.name,
-          playersCount: rooms[roomId].players.length,
+          playersCount: Object.keys(rooms[roomId].players).length,
           message: `${socket.user.name} joined the room`
         }
       });
@@ -568,7 +600,7 @@ io.on('connection', (socket) => {
         socket.to(roomId).emit('player_left', {
           userId: socket.userId,
           userName: socket.user.name,
-          playersCount: rooms[roomId].players.length
+          playersCount: Object.keys(rooms[roomId].players).length
         });
       }
     }

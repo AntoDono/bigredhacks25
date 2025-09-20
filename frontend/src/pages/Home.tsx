@@ -27,8 +27,9 @@ const Home = () => {
                  "-" + 
                  Math.random().toString(36).substring(2, 5).toUpperCase();
     setGeneratedCode(code);
-    setShowCreateRoom(true);
-    toast.success("Room created! Share the code with friends.");
+    toast.success("Room created! Joining room...");
+    // Navigate directly to battle page - room lobby will show there
+    navigate(`/battle/${code}`);
   };
 
   const joinRoom = () => {
