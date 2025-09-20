@@ -258,14 +258,33 @@
       "timer timer"
       "canvas sidebar"
       "prompt prompt";
-    grid-template-columns: 1fr 300px;
-    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr 320px;
+    grid-template-rows: auto 600px auto;
+    height: 100vh;
+    overflow: hidden;
   }
 
-  .battle-timer { grid-area: timer; }
-  .battle-canvas-area { grid-area: canvas; }
-  .battle-sidebar { grid-area: sidebar; }
-  .battle-prompt { grid-area: prompt; }
+  .battle-timer { 
+    grid-area: timer; 
+  }
+  
+  .battle-canvas-area { 
+    grid-area: canvas;
+    min-height: 600px;
+    max-height: 600px;
+    overflow: hidden;
+  }
+  
+  .battle-sidebar { 
+    grid-area: sidebar;
+    min-height: 600px;
+    max-height: 600px;
+    overflow: hidden;
+  }
+  
+  .battle-prompt { 
+    grid-area: prompt; 
+  }
 
   @media (max-width: 768px) {
     .battle-layout {
@@ -275,7 +294,18 @@
         "canvas"
         "sidebar";
       grid-template-columns: 1fr;
-      grid-template-rows: auto auto 1fr auto;
+      grid-template-rows: auto auto 400px 300px;
+      height: auto;
+    }
+    
+    .battle-canvas-area {
+      min-height: 400px;
+      max-height: 400px;
+    }
+    
+    .battle-sidebar {
+      min-height: 300px;
+      max-height: 300px;
     }
   }
 }

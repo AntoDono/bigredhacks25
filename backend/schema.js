@@ -37,9 +37,27 @@ const userSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Element Combination Cache Schema - for caching LLM responses
+const elementCacheSchema = new mongoose.Schema({
+  element1: { type: String, required: true },
+  element2: { type: String, required: true },
+  result: {
+    element: { type: String, required: true },
+    emoji: { type: String, required: true }
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+
+// Create compound index for efficient lookups (order-independent)
+elementCacheSchema.index({ 
+  element1: 1, 
+  element2: 1 
+});
+
 // Create models
 const User = mongoose.model("User", userSchema);
 const Duel = mongoose.model("Duel", duelSchema);
 const DuelRequest = mongoose.model("DuelRequest", duelRequestSchema);
+const ElementCache = mongoose.model("ElementCache", elementCacheSchema);
 
-module.exports = { User, Duel, DuelRequest };
+module.exports = { User, Duel, DuelRequest, ElementCache };

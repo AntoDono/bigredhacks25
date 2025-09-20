@@ -7,8 +7,6 @@ interface Element {
   id: string;
   text: string;
   emoji: string;
-  spanish: string;
-  english: string;
 }
 
 interface StoryModalProps {
@@ -23,37 +21,29 @@ const StoryModal = ({ open, onOpenChange, elements, playerWon, targetWord }: Sto
   // Generate a simple story using the elements
   const generateStory = () => {
     if (elements.length === 0) {
-      return {
-        spanish: "No hay elementos para crear una historia.",
-        english: "There are no elements to create a story."
-      };
+      return "No elements to create a story.";
     }
 
     // Create a simple story template using the elements
     const elementTexts = elements.slice(0, 5); // Use first 5 elements
     
-    let spanish = "En un mundo mágico, ";
-    let english = "In a magical world, ";
+    let story = "In a magical world, ";
 
     if (elementTexts.length >= 2) {
-      spanish += `había ${elementTexts[0].spanish.toLowerCase()} y ${elementTexts[1].spanish.toLowerCase()}. `;
-      english += `there was ${elementTexts[0].english.toLowerCase()} and ${elementTexts[1].english.toLowerCase()}. `;
+      story += `there was ${elementTexts[0].text.toLowerCase()} and ${elementTexts[1].text.toLowerCase()}. `;
     }
 
     if (elementTexts.length >= 3) {
-      spanish += `Un día, ${elementTexts[2].spanish.toLowerCase()} apareció y cambió todo. `;
-      english += `One day, ${elementTexts[2].english.toLowerCase()} appeared and changed everything. `;
+      story += `One day, ${elementTexts[2].text.toLowerCase()} appeared and changed everything. `;
     }
 
     if (playerWon) {
-      spanish += `¡El héroe creó ${targetWord.toLowerCase()} y ganó la batalla!`;
-      english += `The hero created ${targetWord.toLowerCase()} and won the battle!`;
+      story += `The hero created ${targetWord.toLowerCase()} and won the battle!`;
     } else {
-      spanish += "La aventura continúa...";
-      english += "The adventure continues...";
+      story += "The adventure continues...";
     }
 
-    return { spanish, english };
+    return story;
   };
 
   const story = generateStory();
@@ -66,18 +56,18 @@ const StoryModal = ({ open, onOpenChange, elements, playerWon, targetWord }: Sto
             {playerWon ? (
               <>
                 <Trophy className="w-6 h-6 text-success" />
-                ¡Victoria! (Victory!)
+                Victory!
               </>
             ) : (
               <>
                 <BookOpen className="w-6 h-6 text-primary" />
-                Tu Historia (Your Story)
+                Your Story
               </>
             )}
           </DialogTitle>
           <DialogDescription>
             {playerWon 
-              ? "Congratulations! Here's your victory story in Spanish."
+              ? "Congratulations! Here's your victory story."
               : "Here's a story created from your battle elements."
             }
           </DialogDescription>
@@ -104,13 +94,13 @@ const StoryModal = ({ open, onOpenChange, elements, playerWon, targetWord }: Sto
             <div>
               <h4 className="font-semibold mb-3 flex items-center gap-2">
                 <Sparkles className="w-4 h-4" />
-                Elementos Usados (Elements Used)
+                Elements Used
               </h4>
               <div className="flex flex-wrap gap-2">
                 {elements.map((element) => (
                   <div key={element.id} className="story-word">
                     <span className="mr-1">{element.emoji}</span>
-                    {element.spanish}
+                    {element.text}
                   </div>
                 ))}
               </div>
@@ -121,42 +111,32 @@ const StoryModal = ({ open, onOpenChange, elements, playerWon, targetWord }: Sto
           <div>
             <h4 className="font-semibold mb-3 flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
-              Tu Historia (Your Story)
+              Your Adventure Story
             </h4>
             
-            <Card className="p-4 space-y-4">
-              {/* Spanish Version */}
-              <div>
-                <h5 className="font-medium text-primary mb-2">Español:</h5>
-                <p className="text-lg leading-relaxed">{story.spanish}</p>
-              </div>
-              
-              {/* English Version */}
-              <div className="border-t pt-4">
-                <h5 className="font-medium text-muted-foreground mb-2">English:</h5>
-                <p className="text-muted-foreground leading-relaxed">{story.english}</p>
-              </div>
+            <Card className="p-4">
+              <p className="text-lg leading-relaxed">{story}</p>
             </Card>
           </div>
 
-          {/* Learning Tip */}
+          {/* Creative Tip */}
           <Card className="p-4 bg-accent/5 border-accent/20">
             <h4 className="font-semibold text-accent mb-2 flex items-center gap-2">
-              💡 Consejo de Aprendizaje (Learning Tip)
+              💡 Creative Tip
             </h4>
             <p className="text-sm text-muted-foreground">
-              Practice these Spanish words in real conversations! 
-              Try using them in sentences to improve your fluency.
+              Try combining different elements to discover new creations! 
+              Each combination tells a unique story.
             </p>
           </Card>
 
           {/* Action Buttons */}
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar (Close)
+              Close
             </Button>
             <Button onClick={() => window.location.reload()}>
-              Nueva Batalla (New Battle)
+              New Battle
             </Button>
           </div>
         </div>

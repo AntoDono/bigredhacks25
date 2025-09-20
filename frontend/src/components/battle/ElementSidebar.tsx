@@ -9,8 +9,6 @@ interface Element {
   id: string;
   text: string;
   emoji: string;
-  spanish: string;
-  english: string;
 }
 
 interface ElementSidebarProps {
@@ -23,33 +21,33 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredElements = availableElements.filter(element =>
-    element.spanish.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    element.english.toLowerCase().includes(searchTerm.toLowerCase())
+    element.text.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDragStart = (e: React.DragEvent, element: Element) => {
     e.dataTransfer.setData('application/json', JSON.stringify(element));
+    e.dataTransfer.effectAllowed = 'copy';
     onElementDragStart(element);
+    console.log('Drag started for element:', element);
   };
 
   const renderElement = (element: Element) => (
     <div
       key={element.id}
-      className="discovery-item battle-element cursor-grab active:cursor-grabbing"
+      className="discovery-item cursor-grab active:cursor-grabbing flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors"
       draggable
       onDragStart={(e) => handleDragStart(e, element)}
     >
       <span className="text-lg">{element.emoji}</span>
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm truncate">{element.spanish}</div>
-        <div className="text-xs text-muted-foreground truncate">{element.english}</div>
+        <div className="font-medium text-sm truncate">{element.text}</div>
       </div>
     </div>
   );
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3">
+    <Card className="h-full flex flex-col min-h-[600px] max-h-[600px]">
+      <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-lg flex items-center gap-2">
           <Package className="w-5 h-5" />
           Elements
@@ -65,9 +63,9 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 overflow-hidden p-0">
+      <CardContent className="flex-1 overflow-hidden p-0 min-h-0">
         <Tabs defaultValue="all" className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 mx-3 mb-3">
+          <TabsList className="grid w-full grid-cols-2 mx-3 mb-3 flex-shrink-0">
             <TabsTrigger value="all" className="text-xs">
               All ({filteredElements.length})
             </TabsTrigger>
@@ -77,7 +75,7 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden min-h-0">
             <TabsContent value="all" className="h-full overflow-y-auto px-3 pb-3 mt-0">
               <div className="space-y-2">
                 {filteredElements.length > 0 ? (
@@ -104,7 +102,7 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
                   <div className="text-center text-muted-foreground py-8">
                     <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No discoveries yet</p>
-                    <p className="text-xs">Combine elements to discover new words!</p>
+                    <p className="text-xs">Combine elements to discover new creations!</p>
                   </div>
                 )}
               </div>
@@ -114,7 +112,7 @@ const ElementSidebar = ({ availableElements, discoveries, onElementDragStart }: 
       </CardContent>
 
       {/* Quick Stats */}
-      <div className="border-t p-3">
+      <div className="border-t p-3 flex-shrink-0">
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>{availableElements.length} Total</span>
           <span>{discoveries.length} Discovered</span>

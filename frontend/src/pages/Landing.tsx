@@ -11,7 +11,7 @@ const Landing = () => {
   const features = [
     {
       icon: <BookOpen className="w-8 h-8" />,
-      title: "Learn Spanish",
+      title: "Learn by Playing",
       description: "Master vocabulary through interactive battles",
       gradient: "from-primary to-secondary"
     },
@@ -65,7 +65,7 @@ const Landing = () => {
           </h1>
           <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
             Learn languages through epic battles! Combine words like magic, 
-            compete with friends, and master Spanish in the most fun way possible.
+            compete with friends, and master element combinations in the most fun way possible.
           </p>
           <Button 
             onClick={() => navigate('/login')}

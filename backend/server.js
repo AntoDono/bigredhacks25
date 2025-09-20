@@ -341,6 +341,7 @@ const handleCreateElement = async (socket, data) => {
     // Call the create_element function from llm.js
     const result = await create_element(element1, element2);
     const newElement = result.element;
+    const newEmoji = result.emoji;
     const combination = `${element1} + ${element2}`;
     
     // Get user's current room
@@ -409,6 +410,7 @@ const handleCreateElement = async (socket, data) => {
         message: 'Element created successfully',
         data: {
           element: newElement,
+          emoji: newEmoji,
           combination: combination,
           ...(roomStats ? { roomStats } : {})
         }
@@ -601,8 +603,8 @@ app.get('/', (req, res) => {
 
 app.post('/create-element', async (req, res) => {
   const { element1, element2 } = req.body;
-  const newElement = await create_element(element1, element2);
-  res.json({ element: newElement.element });
+  const result = await create_element(element1, element2);
+  res.json({ element: result.element, emoji: result.emoji });
 });
 
 // Create user route

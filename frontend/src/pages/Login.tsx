@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { API_BASE_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -25,30 +25,19 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const endpoint = isSignUp ? '/api/users' : '/api/login';
-      const body = isSignUp 
-        ? { name: formData.name, email: formData.email, password: formData.password }
-        : { email: formData.email, password: formData.password };
-
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.user, data.token);
-        toast.success(isSignUp ? "Account created successfully!" : "Welcome back!");
-        navigate('/home');
+      let data;
+      if (isSignUp) {
+        data = await api.register(formData.name, formData.email, formData.password);
       } else {
-        toast.error(data.error || 'An error occurred');
+        data = await api.login(formData.email, formData.password);
       }
+
+      login(data.user, data.token);
+      toast.success(isSignUp ? "Account created successfully!" : "Welcome back!");
+      navigate('/home');
     } catch (error) {
-      toast.error('Network error. Please try again.');
+      const message = error instanceof Error ? error.message : 'An error occurred';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

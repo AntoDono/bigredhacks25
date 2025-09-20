@@ -217,7 +217,7 @@ const Home = () => {
                         <span className="text-xl">📖</span>
                       </div>
                       <h4 className="font-semibold mb-2">Learning Stories</h4>
-                      <p className="text-white/80">Your creations become part of a Spanish learning story</p>
+                      <p className="text-white/80">Your creations become part of an epic adventure story</p>
                     </div>
                   </div>
                 </div>
