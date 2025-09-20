@@ -27,6 +27,16 @@ const duelSchema = new mongoose.Schema({
   finishedAt: { type: Date }
 });
 
+// Learned vocabulary item schema - matches element cache format
+const learnedVocabularyItemSchema = new mongoose.Schema({
+  elementKey: { type: String, required: true }, // English key (e.g., 'water', 'fire')
+  element: { type: String, required: true }, // Translated element name (e.g., '水', 'Agua')
+  en_text: { type: String, required: true }, // English element name for reference
+  emoji: { type: String, required: true }, // Element emoji
+  audio_b64: { type: String }, // Base64 encoded audio for pronunciation
+  learnedAt: { type: Date, default: Date.now } // When the user first learned this
+}, { _id: false }); // No separate _id for subdocuments
+
 // User Schema
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -34,6 +44,14 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   duels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Duel' }],
   duelRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'DuelRequest' }],
+  
+  // Learned vocabulary organized by language
+  learnedVocabulary: {
+    type: Map,
+    of: [learnedVocabularyItemSchema], // Array of vocabulary items per language
+    default: new Map()
+  },
+  
   createdAt: { type: Date, default: Date.now }
 });
 

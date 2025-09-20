@@ -5,43 +5,37 @@ const { getSupportedLanguages, getElementName, INITIAL_ELEMENTS_CONFIG } = requi
 
 // Basic element combinations to seed the database
 const basicCombinations = [
-    // Classical elements
-    { element1: 'fire', element2: 'water', result: { element: 'Steam', emoji: '💨' } },
-    { element1: 'earth', element2: 'water', result: { element: 'Mud', emoji: '🟤' } },
-    { element1: 'earth', element2: 'fire', result: { element: 'Lava', emoji: '🌋' } },
-    { element1: 'air', element2: 'water', result: { element: 'Cloud', emoji: '☁️' } },
-    { element1: 'air', element2: 'earth', result: { element: 'Dust', emoji: '💨' } },
+  // Classical elements - core natural processes
+  { element1: 'fire', element2: 'water', result: { element: 'Steam', emoji: '💨' } },
+  { element1: 'earth', element2: 'water', result: { element: 'Plant', emoji: '🌱' } },
+  { element1: 'earth', element2: 'fire', result: { element: 'Sand', emoji: '🏖️' } },
+  { element1: 'air', element2: 'water', result: { element: 'Cloud', emoji: '☁️' } },
+  { element1: 'air', element2: 'earth', result: { element: 'Dust', emoji: '💨' } },
 
-    // Material combinations
-    { element1: 'lava', element2: 'water', result: { element: 'Obsidian', emoji: '⚫' } },
-    { element1: 'water', element2: 'lava', result: { element: 'Stone', emoji: '🪨' } },
-    { element1: 'steam', element2: 'steam', result: { element: 'Cloud', emoji: '☁️' } },
-    { element1: 'dust', element2: 'water', result: { element: 'Clay', emoji: '🏺' } },
-    { element1: 'stone', element2: 'stone', result: { element: 'Rock', emoji: '🪨' } },
-    { element1: 'clay', element2: 'fire', result: { element: 'Brick', emoji: '🧱' } },
+  // Material progression
+  { element1: 'fire', element2: 'stone', result: { element: 'Metal', emoji: '⚙️' } },
+  { element1: 'stone', element2: 'stone', result: { element: 'Brick', emoji: '🧱' } },
+  { element1: 'dust', element2: 'water', result: { element: 'Mud', emoji: '🟤' } },
 
-    // Metal progression
-    { element1: 'stone', element2: 'fire', result: { element: 'Metal', emoji: '⚙️' } },
-    { element1: 'metal', element2: 'fire', result: { element: 'Steel', emoji: '🔩' } },
-    { element1: 'metal', element2: 'metal', result: { element: 'Blade', emoji: '⚔️' } },
+  // Metal & Tools
+  { element1: 'metal', element2: 'fire', result: { element: 'Sword', emoji: '⚔️' } },
+  { element1: 'metal', element2: 'metal', result: { element: 'Machine', emoji: '🤖' } },
+  { element1: 'axe', element2: 'tree', result: { element: 'Wood', emoji: '🪵' } },
+  { element1: 'pickaxe', element2: 'stone', result: { element: 'Pebbles', emoji: '🪨' } },
 
-    // Nature progression
-    { element1: 'earth', element2: 'water', result: { element: 'Plant', emoji: '🌱' } },
-    { element1: 'plant', element2: 'plant', result: { element: 'Tree', emoji: '🌳' } },
-    { element1: 'tree', element2: 'fire', result: { element: 'Ash', emoji: '🌫️' } },
-    { element1: 'tree', element2: 'metal', result: { element: 'Tool', emoji: '🔧' } },
+  // Nature progression
+  { element1: 'plant', element2: 'plant', result: { element: 'Tree', emoji: '🌳' } },
+  { element1: 'tree', element2: 'fire', result: { element: 'Ash', emoji: '🌫️' } },
+  { element1: 'wood', element2: 'fire', result: { element: 'Ash', emoji: '🌫️' } },
 
-    // Weather
-    { element1: 'cloud', element2: 'cloud', result: { element: 'Storm', emoji: '⛈️' } },
-    { element1: 'water', element2: 'air', result: { element: 'Ice', emoji: '🧊' } },
-    { element1: 'ice', element2: 'fire', result: { element: 'Water', emoji: '💧' } },
-    { element1: 'cloud', element2: 'fire', result: { element: 'Lightning', emoji: '⚡' } },
+  // Weather
+  { element1: 'cloud', element2: 'cloud', result: { element: 'Storm', emoji: '⛈️' } },
+  { element1: 'storm', element2: 'storm', result: { element: 'Lightning', emoji: '⚡' } },
 
-    // Advanced
-    { element1: 'dust', element2: 'dust', result: { element: 'Sand', emoji: '⏳' } },
-    { element1: 'sand', element2: 'fire', result: { element: 'Glass', emoji: '🔍' } },
-    { element1: 'lightning', element2: 'metal', result: { element: 'Electricity', emoji: '🔌' } },
-    { element1: 'stone', element2: 'pressure', result: { element: 'Diamond', emoji: '💎' } }
+  // Advanced
+  { element1: 'sand', element2: 'air', result: { element: 'Desert', emoji: '🏜️' } },
+  { element1: 'sand', element2: 'fire', result: { element: 'Glass', emoji: '🔍' } },
+  { element1: 'lightning', element2: 'metal', result: { element: 'Electricity', emoji: '🔌' } }
 ];
 
 /**

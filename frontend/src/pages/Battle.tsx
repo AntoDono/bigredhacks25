@@ -13,8 +13,10 @@ import StoryModal from "@/components/battle/StoryModal";
 import RoomLobby from "@/components/battle/RoomLobby";
 import GameOverlay from "@/components/notifications/GameOverlay";
 import ElementNotification from "@/components/notifications/ElementNotification";
+import SpeechRecognitionModal from "@/components/battle/SpeechRecognitionModal";
 import { playBase64Audio } from "@/lib/utils";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, api } from "@/lib/api";
+import { GAME_CONFIG } from "@/lib/gameConfig";
 
 // Default basic elements for the battle (fallback)
 const DEFAULT_INITIAL_ELEMENTS = [
@@ -35,7 +37,7 @@ const Battle = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, token } = useAuth();
   const { 
     connected, 
     joinRoom, 
@@ -50,7 +52,7 @@ const Battle = () => {
     offGameEvent
   } = useSocket();
   
-  const [timeLeft, setTimeLeft] = useState(120); // 2 minutes
+  const [timeLeft, setTimeLeft] = useState<number>(GAME_CONFIG.BATTLE_DURATION);
   const [isActive, setIsActive] = useState(false); // Wait for game to start
   const [availableElements, setAvailableElements] = useState(DEFAULT_INITIAL_ELEMENTS);
   const [canvasElements, setCanvasElements] = useState<Array<any>>([]);
@@ -66,6 +68,15 @@ const Battle = () => {
   const [gameOverlayData, setGameOverlayData] = useState<any>(null);
   const [elementNotifications, setElementNotifications] = useState<any[]>([]);
   const [elementAudio, setElementAudio] = useState<Map<string, string>>(new Map());
+  
+  // Speech recognition state
+  const [showSpeechModal, setShowSpeechModal] = useState(false);
+  const [speechModalData, setSpeechModalData] = useState<{
+    elementName: string;
+    elementEmoji: string;
+    groundTruthAudio: string;
+    pendingElementData: any;
+  } | null>(null);
 
   // Check authentication
   useEffect(() => {
@@ -78,6 +89,10 @@ const Battle = () => {
   useEffect(() => {
     if (connected && roomCode && !roomJoined) {
       const language = location.state?.language || 'en-US';
+      const roomName = `Battle Room ${roomCode}`;
+      const roomDescription = `Real-time battle room`;
+      joinRoom(roomCode, roomName, roomDescription, language);
+      setRoomJoined(true);
       const isCreator = location.state?.isCreator || false;
       console.log(`Attempting to join room ${roomCode} with language ${language}, isCreator: ${isCreator}`);
       
@@ -128,11 +143,11 @@ const Battle = () => {
       setShowLobby(shouldShowLobby);
       
       if (currentRoom.gameStatus === 'active' && currentRoom.startedAt) {
-        // Calculate time left based on start time (2 minute game)
+        // Calculate time left based on start time
         const startTime = new Date(currentRoom.startedAt).getTime();
         const now = Date.now();
         const elapsed = Math.floor((now - startTime) / 1000);
-        const remaining = Math.max(0, 120 - elapsed);
+        const remaining = Math.max(0, GAME_CONFIG.BATTLE_DURATION - elapsed);
         setTimeLeft(remaining);
       }
     }
@@ -176,13 +191,6 @@ const Battle = () => {
             newMap.set(data.element.toLowerCase(), data.audio_b64);
             return newMap;
           });
-          
-          // Play audio immediately for the newly created element
-          try {
-            playBase64Audio(data.audio_b64, 0.5);
-          } catch (error) {
-            console.error('Failed to play element creation audio:', error);
-          }
         }
         
         // Create a new element object with proper formatting
@@ -196,6 +204,18 @@ const Battle = () => {
           emoji: data.emoji || '✨', // Use generated emoji or fallback to sparkles
           en_text: data.en_text, // Store English text separately for matching
         };
+
+        // If audio is available, show speech recognition modal first
+        if (data.audio_b64) {
+          setSpeechModalData({
+            elementName: data.element,
+            elementEmoji: data.emoji || '✨',
+            groundTruthAudio: data.audio_b64,
+            pendingElementData: { data, newElement }
+          });
+          setShowSpeechModal(true);
+          return; // Don't add element to game yet - wait for speech recognition success
+        }
 
         // Check if this was from a canvas combination (placeholder replacement)
         const pendingCombination = (window as any).pendingCombination;
@@ -402,14 +422,14 @@ const Battle = () => {
 
   // Function to play audio for an element
   const playElementAudio = async (elementText: string) => {
-    const audioData = elementAudio.get(elementText.toLowerCase());
-    if (audioData) {
-      try {
-        await playBase64Audio(audioData, 0.5); // Lower volume so it's not too loud
-      } catch (error) {
-        console.error('Failed to play element audio:', error);
+      const audioData = elementAudio.get(elementText.toLowerCase());
+      if (audioData) {
+        try {
+          await playBase64Audio(audioData, GAME_CONFIG.AUDIO_PLAYBACK_VOLUME);
+        } catch (error) {
+          console.error('Failed to play element audio:', error);
+        }
       }
-    }
   };
 
   // Function to fetch language-specific initial elements
@@ -463,7 +483,7 @@ const Battle = () => {
   };
 
   const restartBattle = () => {
-    setTimeLeft(120); // 2 minutes
+    setTimeLeft(GAME_CONFIG.BATTLE_DURATION);
     setIsActive(true);
     setCanvasElements([]);
     setDiscoveries([]);
@@ -495,15 +515,152 @@ const Battle = () => {
     
     setElementNotifications(prev => [...prev, notification]);
     
-    // Auto remove after 4 seconds
+    // Auto remove after configured duration
     setTimeout(() => {
       setElementNotifications(prev => prev.filter(n => n.id !== id));
-    }, 4000);
+    }, GAME_CONFIG.ELEMENT_NOTIFICATION_DURATION);
   };
 
   const displayGameOverlay = (type: 'victory' | 'defeat' | 'timeup', data: any) => {
     setGameOverlayData({ type, ...data });
     setShowGameOverlay(true);
+
+    // Update user's learned vocabulary when game ends
+    updateUserVocabulary();
+  };
+
+  // Update user's learned vocabulary with all elements from the game
+  const updateUserVocabulary = async () => {
+    if (!user?.id || !token) {
+      console.warn('No user or token available for vocabulary update');
+      return;
+    }
+
+    try {
+      // Get current language from location state or default to en-US
+      const languageCode = location.state?.language || 'en-US';
+      
+      // Collect all elements from the game (discoveries + available elements)
+      const allElements: any[] = [];
+      
+      // Add discoveries with their audio data
+      discoveries.forEach(element => {
+        const elementEnText = (element as any).en_text;
+        const elementKey = elementEnText || element.text.toLowerCase().replace(/\s+/g, '_');
+        const audioB64 = elementAudio.get(element.text.toLowerCase()) || 
+                         elementAudio.get(elementKey.toLowerCase()) || null;
+        
+        allElements.push({
+          elementKey,
+          element: element.text,
+          en_text: elementEnText || element.text,
+          emoji: element.emoji,
+          audio_b64: audioB64
+        });
+      });
+
+      // Add initial/available elements with their audio data
+      availableElements.forEach(element => {
+        const elementEnText = (element as any).en_text;
+        const elementKey = elementEnText || element.text.toLowerCase().replace(/\s+/g, '_');
+        const audioB64 = elementAudio.get(element.text.toLowerCase()) || 
+                         elementAudio.get(elementKey.toLowerCase()) || 
+                         elementAudio.get(element.id?.toLowerCase()) || null;
+        
+        // Check if not already added from discoveries
+        if (!allElements.find(e => e.elementKey === elementKey)) {
+          allElements.push({
+            elementKey,
+            element: element.text,
+            en_text: elementEnText || element.text,
+            emoji: element.emoji,
+            audio_b64: audioB64
+          });
+        }
+      });
+
+      console.log(`Updating vocabulary with ${allElements.length} elements for language ${languageCode}`);
+      
+      const result = await api.updateUserVocabulary(user.id, allElements, languageCode, token);
+      
+      if (result.addedCount > 0) {
+        toast.success(`Added ${result.addedCount} new words to your ${languageCode} vocabulary!`);
+      }
+      
+      console.log(`Vocabulary update complete: ${result.addedCount} new words added, ${result.totalVocabularyCount} total`);
+
+    } catch (error) {
+      console.error('Failed to update vocabulary:', error);
+      // Don't show error toast to user as this is background functionality
+    }
+  };
+
+  // Handle successful speech recognition
+  const handleSpeechRecognitionSuccess = () => {
+    if (!speechModalData) return;
+
+    const { pendingElementData } = speechModalData;
+    const { data, newElement } = pendingElementData;
+
+        // Play audio immediately for the newly created element (now that pronunciation is verified)
+        try {
+          playBase64Audio(data.audio_b64, GAME_CONFIG.AUDIO_PLAYBACK_VOLUME);
+        } catch (error) {
+          console.error('Failed to play element creation audio:', error);
+        }
+
+    // Check if this was from a canvas combination (placeholder replacement)
+    const pendingCombination = (window as any).pendingCombination;
+    if (pendingCombination) {
+      // Find the placeholder and replace it with the new element at the same position
+      setCanvasElements(prev => {
+        const placeholder = prev.find(el => el.id === pendingCombination.id);
+        if (placeholder) {
+          const replacementElement = {
+            ...newElement,
+            x: placeholder.x,
+            y: placeholder.y,
+            id: `canvas-${newElement.id}` // Ensure unique canvas ID
+          };
+          return prev.map(el => 
+            el.id === pendingCombination.id ? replacementElement : el
+          );
+        }
+        return prev;
+      });
+      
+      // Clear the pending combination
+      delete (window as any).pendingCombination;
+    }
+
+    // Add to discoveries if not already there
+    setDiscoveries(prev => {
+      if (!prev.find(el => el.text === newElement.text)) {
+        return [...prev, newElement];
+      }
+      return prev;
+    });
+
+    // Add to available elements for further combinations
+    setAvailableElements(prev => {
+      if (!prev.find(el => el.text === newElement.text)) {
+        return [...prev, newElement];
+      }
+      return prev;
+    });
+
+    // Show custom element notification
+    showElementNotification(
+      data.element,
+      data.emoji || '✨',
+      `${pendingCombination?.element1.text || ''} + ${pendingCombination?.element2.text || ''}`,
+      undefined,
+      true
+    );
+
+    // Close the speech modal
+    setShowSpeechModal(false);
+    setSpeechModalData(null);
   };
   if (isLoading) {
     return (
@@ -527,41 +684,28 @@ const Battle = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="container mx-auto max-w-7xl">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/home')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+          
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/home')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
             <div>
               <h1 className="text-2xl font-bold">Battle Room: {roomCode}</h1>
               <p className="text-muted-foreground">Player vs Player</p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-4">
+            
             <Card className="px-4 py-2">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4 text-primary" />
                 <span className="font-medium">Target: {targetWord}</span>
               </div>
             </Card>
-            
-            {/* Game Start Button for Room Creator */}
-            {isRoomCreator && currentRoom?.gameStatus === 'waiting' && (
-              <Button 
-                onClick={handleStartGame}
-                className="btn-hero"
-                disabled={!connected}
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Start Game
-              </Button>
-            )}
             
             {/* Game Status Indicator */}
             <Card className="px-3 py-2 shadow-soft hover:shadow-medium transition-shadow duration-200">
@@ -574,6 +718,20 @@ const Battle = () => {
               </div>
             </Card>
           </div>
+
+          {/* Game Start Button for Room Creator - positioned on the right */}
+          <div className="ml-auto">
+            {isRoomCreator && currentRoom?.gameStatus === 'waiting' && (
+              <Button 
+                onClick={handleStartGame}
+                className="btn-hero"
+                disabled={!connected}
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Start Game
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Battle Layout */}
@@ -585,7 +743,7 @@ const Battle = () => {
               isActive={isActive} 
               gameEnded={gameEnded}
               playerWon={playerWon}
-              totalDuration={120}
+              totalDuration={GAME_CONFIG.BATTLE_DURATION}
             />
           </div>
 
@@ -722,6 +880,22 @@ const Battle = () => {
           </div>
         ))}
       </div>
+
+      {/* Speech Recognition Modal */}
+      {speechModalData && (
+        <SpeechRecognitionModal
+          isOpen={showSpeechModal}
+          onClose={() => {
+            setShowSpeechModal(false);
+            setSpeechModalData(null);
+          }}
+          onSuccess={handleSpeechRecognitionSuccess}
+          elementName={speechModalData.elementName}
+          elementEmoji={speechModalData.elementEmoji}
+          groundTruthAudio={speechModalData.groundTruthAudio}
+          threshold={GAME_CONFIG.SPEECH_RECOGNITION_THRESHOLD}
+        />
+      )}
     </div>
   );
 };
