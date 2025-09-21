@@ -276,6 +276,149 @@ const ELEMENT_TRANSLATIONS = {
     'ja-JP': '城',
     'ko-KR': '성',
     'zh-CN': '城堡'
+  },
+  'sand': {
+    'en-US': 'Sand',
+    'es-ES': 'Arena',
+    'fr-FR': 'Sable',
+    'de-DE': 'Sand',
+    'it-IT': 'Sabbia',
+    'pt-BR': 'Areia',
+    'ja-JP': '砂',
+    'ko-KR': '모래',
+    'zh-CN': '沙'
+  },
+  'dust': {
+    'en-US': 'Dust',
+    'es-ES': 'Polvo',
+    'fr-FR': 'Poussière',
+    'de-DE': 'Staub',
+    'it-IT': 'Polvere',
+    'pt-BR': 'Pó',
+    'ja-JP': 'ほこり',
+    'ko-KR': '먼지',
+    'zh-CN': '灰尘'
+  },
+  'pressure': {
+    'en-US': 'Pressure',
+    'es-ES': 'Presión',
+    'fr-FR': 'Pression',
+    'de-DE': 'Druck',
+    'it-IT': 'Pressione',
+    'pt-BR': 'Pressão',
+    'ja-JP': '圧力',
+    'ko-KR': '압력',
+    'zh-CN': '压力'
+  },
+  'brick': {
+    'en-US': 'Brick',
+    'es-ES': 'Ladrillo',
+    'fr-FR': 'Brique',
+    'de-DE': 'Ziegel',
+    'it-IT': 'Mattone',
+    'pt-BR': 'Tijolo',
+    'ja-JP': 'レンガ',
+    'ko-KR': '벽돌',
+    'zh-CN': '砖'
+  },
+  'wood': {
+    'en-US': 'Wood',
+    'es-ES': 'Madera',
+    'fr-FR': 'Bois',
+    'de-DE': 'Holz',
+    'it-IT': 'Legno',
+    'pt-BR': 'Madeira',
+    'ja-JP': '木材',
+    'ko-KR': '나무',
+    'zh-CN': '木头'
+  },
+  'pebbles': {
+    'en-US': 'Pebbles',
+    'es-ES': 'Guijarros',
+    'fr-FR': 'Cailloux',
+    'de-DE': 'Kieselsteine',
+    'it-IT': 'Ciottoli',
+    'pt-BR': 'Seixos',
+    'ja-JP': '小石',
+    'ko-KR': '자갈',
+    'zh-CN': '鹅卵石'
+  },
+  'ash': {
+    'en-US': 'Ash',
+    'es-ES': 'Ceniza',
+    'fr-FR': 'Cendre',
+    'de-DE': 'Asche',
+    'it-IT': 'Cenere',
+    'pt-BR': 'Cinza',
+    'ja-JP': '灰',
+    'ko-KR': '재',
+    'zh-CN': '灰'
+  },
+  'desert': {
+    'en-US': 'Desert',
+    'es-ES': 'Desierto',
+    'fr-FR': 'Désert',
+    'de-DE': 'Wüste',
+    'it-IT': 'Deserto',
+    'pt-BR': 'Deserto',
+    'ja-JP': '砂漠',
+    'ko-KR': '사막',
+    'zh-CN': '沙漠'
+  },
+  'obsidian': {
+    'en-US': 'Obsidian',
+    'es-ES': 'Obsidiana',
+    'fr-FR': 'Obsidienne',
+    'de-DE': 'Obsidian',
+    'it-IT': 'Ossidiana',
+    'pt-BR': 'Obsidiana',
+    'ja-JP': '黒曜石',
+    'ko-KR': '흑요석',
+    'zh-CN': '黑曜石'
+  },
+  'ocean': {
+    'en-US': 'Ocean',
+    'es-ES': 'Océano',
+    'fr-FR': 'Océan',
+    'de-DE': 'Ozean',
+    'it-IT': 'Oceano',
+    'pt-BR': 'Oceano',
+    'ja-JP': '海',
+    'ko-KR': '바다',
+    'zh-CN': '海洋'
+  },
+  'forest': {
+    'en-US': 'Forest',
+    'es-ES': 'Bosque',
+    'fr-FR': 'Forêt',
+    'de-DE': 'Wald',
+    'it-IT': 'Foresta',
+    'pt-BR': 'Floresta',
+    'ja-JP': '森',
+    'ko-KR': '숲',
+    'zh-CN': '森林'
+  },
+  'mountain': {
+    'en-US': 'Mountain',
+    'es-ES': 'Montaña',
+    'fr-FR': 'Montagne',
+    'de-DE': 'Berg',
+    'it-IT': 'Montagna',
+    'pt-BR': 'Montanha',
+    'ja-JP': '山',
+    'ko-KR': '산',
+    'zh-CN': '山'
+  },
+  'tool': {
+    'en-US': 'Tool',
+    'es-ES': 'Herramienta',
+    'fr-FR': 'Outil',
+    'de-DE': 'Werkzeug',
+    'it-IT': 'Strumento',
+    'pt-BR': 'Ferramenta',
+    'ja-JP': '道具',
+    'ko-KR': '도구',
+    'zh-CN': '工具'
   }
 };
 

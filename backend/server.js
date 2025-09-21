@@ -609,6 +609,7 @@ const handleCreateElement = async (socket, data) => {
     const newEmoji = result.emoji;
     const audioB64 = result.audio_b64;
     const enText = result.en_text;
+    const phonetics = result.phonetics;
     const combination = `${element1} + ${element2}`;
     
     let gameEnded = false;
@@ -667,6 +668,7 @@ const handleCreateElement = async (socket, data) => {
         element: newElement,
         en_text: enText, // Include English text for target matching and display
         emoji: newEmoji,
+        phonetics: phonetics, // Include phonetics for pronunciation guide
         combination: combination,
         audio_b64: audioB64,
         ...(roomStats ? { roomStats } : {})

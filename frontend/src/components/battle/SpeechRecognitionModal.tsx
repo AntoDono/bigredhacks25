@@ -37,6 +37,7 @@ interface SpeechRecognitionModalProps {
   elementName: string;
   elementEmoji: string;
   groundTruthAudio: string; // base64 audio data
+  phonetics?: string; // English pronunciation guide
   language?: string; // language code (e.g., 'en', 'es', 'fr')
   context?: 'battle' | 'practice'; // context to determine auto-start behavior
 }
@@ -48,6 +49,7 @@ const SpeechRecognitionModal = ({
   elementName,
   elementEmoji,
   groundTruthAudio,
+  phonetics,
   language = 'en',
   context = 'practice'
 }: SpeechRecognitionModalProps) => {
@@ -326,6 +328,11 @@ const SpeechRecognitionModal = ({
             <span className="text-2xl">{elementEmoji}</span>
             Pronounce "{elementName}"
           </DialogTitle>
+          {phonetics && (
+            <div className="text-sm text-muted-foreground font-mono bg-muted/50 px-3 py-2 rounded-md">
+              <span className="text-xs text-muted-foreground/70">Pronunciation:</span> {phonetics}
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-6">
