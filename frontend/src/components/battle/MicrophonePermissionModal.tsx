@@ -11,12 +11,14 @@ interface MicrophonePermissionModalProps {
   isOpen: boolean;
   onPermissionGranted: () => void;
   onPermissionDenied: () => void;
+  onContinueAnyway?: () => void;
 }
 
 const MicrophonePermissionModal = ({
   isOpen,
   onPermissionGranted,
-  onPermissionDenied
+  onPermissionDenied,
+  onContinueAnyway
 }: MicrophonePermissionModalProps) => {
   const [isRequesting, setIsRequesting] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<'idle' | 'granted' | 'denied'>('idle');
@@ -90,6 +92,16 @@ const MicrophonePermissionModal = ({
   const handleSkip = () => {
     toast.warning('You can still play the game, but speech challenges will be disabled.');
     onPermissionDenied();
+  };
+
+  // Check if we can show a "Continue Anyway" option for users who want to try speech recognition later
+  const handleContinueAnyway = () => {
+    toast.info('You can try speech recognition later when you create new elements.');
+    if (onContinueAnyway) {
+      onContinueAnyway();
+    } else {
+      onPermissionDenied();
+    }
   };
 
   return (
@@ -181,21 +193,30 @@ const MicrophonePermissionModal = ({
             )}
             
             {permissionStatus === 'denied' && (
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleRetry}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Mic className="w-4 h-4 mr-2" />
+                    Try Again
+                  </Button>
+                  <Button 
+                    onClick={handleSkip}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    Continue Without Microphone
+                  </Button>
+                </div>
                 <Button 
-                  onClick={handleRetry}
-                  variant="outline"
-                  className="flex-1"
+                  onClick={handleContinueAnyway}
+                  variant="ghost"
+                  className="w-full"
                 >
-                  <Mic className="w-4 h-4 mr-2" />
-                  Try Again
-                </Button>
-                <Button 
-                  onClick={handleSkip}
-                  variant="secondary"
-                  className="flex-1"
-                >
-                  Continue Without Microphone
+                  Continue Anyway (Try Speech Later)
                 </Button>
               </div>
             )}

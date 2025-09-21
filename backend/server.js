@@ -1444,7 +1444,7 @@ server.listen(PORT, () => {
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Access server at: http://localhost:${PORT}`);
   console.log(`🔌 Socket.IO server ready`);
-  console.log(`🎙️ Voice service should be running on http://localhost:7759`);
+  console.log(`🎙️ Voice service should be running on http://localhost:7758`);
 });
 
 module.exports = { app, server, io };

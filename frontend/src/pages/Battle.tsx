@@ -464,14 +464,17 @@ const Battle = () => {
     console.log('🎤 Microphone permission denied - speech challenges disabled');
   };
 
+  const handleMicrophonePermissionContinueAnyway = () => {
+    // Allow speech recognition attempts even if initial permission was denied
+    setMicrophonePermissionGranted(true);
+    setShowMicrophonePermission(false);
+    console.log('🎤 User chose to continue anyway - speech challenges will be attempted');
+  };
+
   const handleSpeechRecognitionRequest = (elementData: any) => {
-    // Check if microphone permission was granted
-    if (!microphonePermissionGranted) {
-      toast.error("Microphone access is required for speech challenges. Please allow microphone access to continue.");
-      return;
-    }
-    
-    // Proceed with speech recognition
+    // Always proceed with speech recognition - let the SpeechRecognitionModal handle permission
+    // The modal will request permission when it actually needs to record
+    console.log('🎤 Opening speech recognition modal');
     setSpeechModalData(elementData);
     setShowSpeechModal(true);
   };
@@ -910,6 +913,7 @@ const Battle = () => {
         isOpen={showMicrophonePermission}
         onPermissionGranted={handleMicrophonePermissionGranted}
         onPermissionDenied={handleMicrophonePermissionDenied}
+        onContinueAnyway={handleMicrophonePermissionContinueAnyway}
       />
     </div>
   );
