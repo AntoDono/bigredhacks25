@@ -6,6 +6,7 @@ require('dotenv').config();
 const { create_element } = require('./llm');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 require('./db'); // Connect to database
 const { User, Game, InitialElementsAudio } = require('./schema');
 const { getInitialElements } = require('./languages');
@@ -274,7 +275,7 @@ async function saveGameToDatabase(room, roomId) {
 
     // Prepare players array from room data
     const players = Object.entries(room.player_stats).map(([userId, stats]) => ({
-      userId: userId,
+      userId: new mongoose.Types.ObjectId(userId),
       userName: room.players[userId]?.name || 'Unknown',
       score: stats.score || 0,
       elementsDiscovered: stats.elements?.length || 0
@@ -282,7 +283,7 @@ async function saveGameToDatabase(room, roomId) {
 
     // Find winner info (null if no winner)
     const winner = room.winner ? {
-      userId: room.winner,
+      userId: new mongoose.Types.ObjectId(room.winner),
       userName: room.players[room.winner]?.name || 'Unknown'
     } : null;
 
@@ -1361,7 +1362,7 @@ app.get('/api/users/:userId/games', authenticateToken, async (req, res) => {
         elementsDiscovered: player.elementsDiscovered
       })),
       // Add user-specific information
-      userWon: game.winner ? game.winner.userId.toString() === userId : false,
+      userWon: game.winner.userId._id.toString() === userId,  
       userStats: game.players.find(p => p.userId._id ? p.userId._id.toString() === userId : p.userId.toString() === userId)
     }));
 
