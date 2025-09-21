@@ -198,38 +198,7 @@ const Home = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Actions Grid */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Game Info */}
-            <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="p-8">
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold mb-6 text-gray-900">How to Play Duelingo</h3>
-                  <div className="grid md:grid-cols-3 gap-6">
-                    <div>
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <span className="text-xl">🎯</span>
-                      </div>
-                      <h4 className="font-semibold mb-2 text-gray-900">Battle Objective</h4>
-                      <p className="text-gray-600 text-sm">Race to create the target word using drag-and-drop combinations</p>
-                    </div>
-                    <div>
-                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <span className="text-xl">⏱️</span>
-                      </div>
-                      <h4 className="font-semibold mb-2 text-gray-900">60 Second Timer</h4>
-                      <p className="text-gray-600 text-sm">Quick battles test your vocabulary skills under pressure</p>
-                    </div>
-                    <div>
-                      <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <span className="text-xl">📖</span>
-                      </div>
-                      <h4 className="font-semibold mb-2 text-gray-900">Learning Stories</h4>
-                      <p className="text-gray-600 text-sm">Your creations become part of an adventure story</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+            
             {/* Create Room */}
             <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
@@ -362,13 +331,46 @@ const Home = () => {
                 </div>
               </CardContent>
             </Card>
+            {/* Game Info */}
+            <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold mb-6 text-gray-900">How to Play Duelingo</h3>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div>
+                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <span className="text-xl">🎯</span>
+                      </div>
+                      <h4 className="font-semibold mb-2 text-gray-900">Battle Objective</h4>
+                      <p className="text-gray-600 text-sm">Race to create the target word using drag-and-drop combinations</p>
+                    </div>
+                    <div>
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <span className="text-xl">⏱️</span>
+                      </div>
+                      <h4 className="font-semibold mb-2 text-gray-900">60 Second Timer</h4>
+                      <p className="text-gray-600 text-sm">Quick battles test your vocabulary skills under pressure</p>
+                    </div>
+                    <div>
+                      <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <span className="text-xl">📖</span>
+                      </div>
+                      <h4 className="font-semibold mb-2 text-gray-900">Learning Stories</h4>
+                      <p className="text-gray-600 text-sm">Your creations become part of an adventure story</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
           </div>
 
           {/* Profile Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-4 space-y-6">
-              <Profile />
               <VocabularyDisplay />
+              <Profile />
+              
             </div>
           </div>
         </div>
