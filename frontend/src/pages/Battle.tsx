@@ -42,6 +42,7 @@ const Battle = () => {
     startGame, 
     currentRoom,
     roomError,
+    gameConfig,
     onElementCreated,
     onGameEvent,
     offElementCreated,
@@ -173,11 +174,19 @@ const Battle = () => {
         const startTime = new Date(currentRoom.startedAt).getTime();
         const now = Date.now();
         const elapsed = Math.floor((now - startTime) / 1000);
-        const remaining = Math.max(0, GAME_CONFIG.BATTLE_DURATION - elapsed);
+        const battleDuration = gameConfig?.BATTLE_DURATION || GAME_CONFIG.BATTLE_DURATION;
+        const remaining = Math.max(0, battleDuration - elapsed);
         setTimeLeft(remaining);
       }
     }
   }, [currentRoom, user?.id]);
+
+  // Update timeLeft when gameConfig is received
+  useEffect(() => {
+    if (gameConfig?.BATTLE_DURATION && !isActive && !gameEnded) {
+      setTimeLeft(gameConfig.BATTLE_DURATION);
+    }
+  }, [gameConfig, isActive, gameEnded]);
 
   // Handle element creation responses from backend
   useEffect(() => {
@@ -746,11 +755,11 @@ const Battle = () => {
           {/* Timer */}
           <div className="battle-timer">
             <Timer 
-              timeLeft={timeLeft} 
-              isActive={isActive} 
+              timeLeft={timeLeft}
+              isActive={isActive}
               gameEnded={gameEnded}
               playerWon={playerWon}
-              totalDuration={GAME_CONFIG.BATTLE_DURATION}
+              totalDuration={gameConfig?.BATTLE_DURATION || GAME_CONFIG.BATTLE_DURATION}
             />
           </div>
 

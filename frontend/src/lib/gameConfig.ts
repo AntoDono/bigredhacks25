@@ -6,7 +6,7 @@
 
 export const GAME_CONFIG = {
   // Timer Settings (in seconds)
-  BATTLE_DURATION: 180, // 3 minutes - main game timer
+  BATTLE_DURATION: 120, // 3 minutes - main game timer
   
   // Speech Recognition Settings
   SPEECH_SUCCESS_AUTO_CLOSE_DELAY: 1000, // 1 second delay before auto-closing modal

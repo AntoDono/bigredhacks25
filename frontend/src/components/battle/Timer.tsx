@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, Trophy, AlertTriangle } from "lucide-react";
+import { GAME_CONFIG } from "@/lib/gameConfig";
 
 interface TimerProps {
   timeLeft: number;
@@ -9,7 +10,7 @@ interface TimerProps {
   totalDuration?: number; // Total game duration for progress bar calculation
 }
 
-const Timer = ({ timeLeft, isActive, gameEnded, playerWon, totalDuration = 120 }: TimerProps) => {
+const Timer = ({ timeLeft, isActive, gameEnded, playerWon, totalDuration = GAME_CONFIG.BATTLE_DURATION }: TimerProps) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;

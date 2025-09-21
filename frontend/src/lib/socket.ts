@@ -18,6 +18,7 @@ export interface SocketEvents {
   'message_broadcast': (data: { type: string; data: any }) => void;
   'message_error': (data: { success: boolean; message: string; originalMessage: any; error?: string }) => void;
   'player_left': (data: { userId: string; userName: string; playersCount: number }) => void;
+  'game_config': (data: { success: boolean; config: any }) => void;
 }
 
 export interface CreateElementData {

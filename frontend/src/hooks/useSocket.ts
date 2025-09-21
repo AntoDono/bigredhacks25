@@ -14,6 +14,7 @@ interface UseSocketReturn {
   checkRoomValidity: (roomId: string) => Promise<{ valid: boolean; message?: string; room?: any }>;
   currentRoom: any;
   roomError: string | null;
+  gameConfig: any;
   onElementCreated: (callback: (elementData: any) => void) => void;
   onGameEvent: (callback: (eventData: any) => void) => void;
   offElementCreated: (callback: (elementData: any) => void) => void;
@@ -25,6 +26,7 @@ export const useSocket = (): UseSocketReturn => {
   const [connected, setConnected] = useState(false);
   const [currentRoom, setCurrentRoom] = useState<any>(null);
   const [roomError, setRoomError] = useState<string | null>(null);
+  const [gameConfig, setGameConfig] = useState<any>(null);
 
   // Connect socket when authenticated
   useEffect(() => {
@@ -80,6 +82,14 @@ export const useSocket = (): UseSocketReturn => {
       console.error('Room create error:', data);
       setRoomError(data.message);
       toast.error(data.message);
+    };
+
+    // Game config event
+    const handleGameConfig = (data: any) => {
+      console.log('Game config received:', data);
+      if (data.success) {
+        setGameConfig(data.config);
+      }
     };
 
     // Message events
@@ -208,6 +218,7 @@ export const useSocket = (): UseSocketReturn => {
     socketClient.onMessageError(handleMessageError);
     socketClient.onPlayerLeft(handlePlayerLeft);
     socketClient.onRoomLeft(handleRoomLeft);
+    socketClient.instance?.on('game_config', handleGameConfig);
 
     // Cleanup function
     return () => {
@@ -220,6 +231,7 @@ export const useSocket = (): UseSocketReturn => {
       socketClient.off('message_error', handleMessageError);
       socketClient.off('player_left', handlePlayerLeft);
       socketClient.off('room_left', handleRoomLeft);
+      socketClient.instance?.off('game_config', handleGameConfig);
     };
   }, [connected, currentRoom]);
 
@@ -317,6 +329,7 @@ export const useSocket = (): UseSocketReturn => {
     checkRoomValidity,
     currentRoom,
     roomError,
+    gameConfig,
     onElementCreated,
     onGameEvent,
     offElementCreated,

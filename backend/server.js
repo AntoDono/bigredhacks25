@@ -108,7 +108,7 @@ rooms = {
 
 // Game configuration
 const GAME_CONFIG = {
-  BATTLE_DURATION: 180, // 3 minutes in seconds
+  BATTLE_DURATION: 120, // 3 minutes in seconds
 };
 
 // Store connected users
@@ -714,6 +714,12 @@ io.on('connection', (socket) => {
     user: socket.user,
     roomId: null
   };
+
+  // Send game configuration to the client
+  socket.emit('game_config', {
+    success: true,
+    config: GAME_CONFIG
+  });
 
   // Handle user joining a room
   socket.on('join_room', (data) => {
