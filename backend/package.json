@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "dev": "concurrently \"nodemon server.js\" \"python3 voice_service.py\"",
+      "dev": "concurrently \"nodemon server.js\" \"python voice_service.py\"",
     "dev:node": "nodemon server.js",
     "dev:python": "python3 voice_service.py"
   },

@@ -34,6 +34,9 @@ warnings.filterwarnings('ignore', category=UserWarning)
 app = Flask(__name__)
 CORS(app)
 
+# Increase maximum content length to handle large audio payloads
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB
+
 # Global speech client
 speech_client = None
 

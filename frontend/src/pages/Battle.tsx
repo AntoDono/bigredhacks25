@@ -76,6 +76,7 @@ const Battle = () => {
     elementName: string;
     elementEmoji: string;
     groundTruthAudio: string;
+    phonetics?: string;
     pendingElementData: any;
   } | null>(null);
   const [gameLanguage, setGameLanguage] = useState<string>('en-US');
@@ -241,6 +242,7 @@ const Battle = () => {
             elementName: data.element,
             elementEmoji: data.emoji || '✨',
             groundTruthAudio: data.audio_b64,
+            phonetics: data.phonetics,
             pendingElementData: { data, newElement }
           };
           handleSpeechRecognitionRequest(elementData);
@@ -896,6 +898,7 @@ const Battle = () => {
           elementName={speechModalData.elementName}
           elementEmoji={speechModalData.elementEmoji}
           groundTruthAudio={speechModalData.groundTruthAudio}
+          phonetics={speechModalData.phonetics}
           language={getSimpleLanguageCode(gameLanguage)}
           context="battle"
         />

@@ -27,6 +27,7 @@ const learnedVocabularyItemSchema = new mongoose.Schema({
   element: { type: String, required: true }, // Translated element name (e.g., '水', 'Agua')
   en_text: { type: String, required: true }, // English element name for reference
   emoji: { type: String, required: true }, // Element emoji
+  phonetics: { type: String, required: true }, // English pronunciation guide
   audio_b64: { type: String }, // Base64 encoded audio for pronunciation
   learnedAt: { type: Date, default: Date.now } // When the user first learned this
 }, { _id: false }); // No separate _id for subdocuments
@@ -58,6 +59,7 @@ const elementCacheSchema = new mongoose.Schema({
     element: { type: String, required: true }, // Translated element name
     en_text: { type: String, required: true }, // English element name for target matching
     emoji: { type: String, required: true },
+    phonetics: { type: String, required: true }, // English pronunciation guide
     audio_b64: { type: String } // Base64 encoded audio for TTS
   },
   languageCode: { type: String, default: 'en-US' }, // Language for TTS audio

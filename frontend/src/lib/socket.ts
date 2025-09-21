@@ -61,6 +61,7 @@ export interface ElementCreationResponse {
     element: string;
     en_text?: string;
     emoji: string;
+    phonetics?: string;
     combination: string;
     audio_b64?: string;
     roomStats?: RoomStats;

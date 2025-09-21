@@ -89,13 +89,7 @@ async function create_element(element1, element2, languageCode = 'en-US') {
       "messages": [
         {
           "role": "system",
-          "content": `${create_element_prompt}\n\nCombine these two elements: ${element1} + ${element2}. Output the result in ${languageCode} language. 
-
-IMPORTANT: Always include both "element" (in ${languageCode}) and "en_text" (in English) fields in your JSON response.
-
-Example for Chinese: {"element": "蒸汽", "en_text": "Steam", "emoji": "💨"}
-Example for Spanish: {"element": "Vapor", "en_text": "Steam", "emoji": "💨"}
-Example for English: {"element": "Steam", "en_text": "Steam", "emoji": "💨"}`
+          "content": `${create_element_prompt}\n\nCombine these two elements: ${element1} + ${element2}. Output the result in ${languageCode} language.`
         },
         {
           "role": "user",
@@ -131,6 +125,12 @@ Example for English: {"element": "Steam", "en_text": "Steam", "emoji": "💨"}`
         }
       }
       
+      // Add phonetics field if not present (for new LLM-generated elements)
+      if (!parsed.phonetics) {
+        // Generate simple phonetics based on the element name
+        parsed.phonetics = parsed.element.toLowerCase().replace(/[^a-z]/g, '-');
+      }
+      
       // Cache the successful result
       await cacheElement(element1, element2, parsed, languageCode);
       
@@ -138,7 +138,7 @@ Example for English: {"element": "Steam", "en_text": "Steam", "emoji": "💨"}`
     } catch (parseError) {
       // Fallback if JSON parsing fails
       console.error('Failed to parse JSON response:', response);
-      const fallback = { element: "trash", en_text: "trash", emoji: "❓" };
+      const fallback = { element: "trash", en_text: "trash", emoji: "❓", phonetics: "trash" };
       
       // Cache the fallback result to avoid repeated failures
       await cacheElement(element1, element2, fallback, languageCode);
@@ -148,7 +148,7 @@ Example for English: {"element": "Steam", "en_text": "Steam", "emoji": "💨"}`
     
   } catch (error) {
     console.error('Error creating element:', error);
-    const errorResult = { element: "Error", en_text: "Error", emoji: "⚠️" };
+    const errorResult = { element: "Error", en_text: "Error", emoji: "⚠️", phonetics: "er-ror" };
     
     // Don't cache error results as they might be temporary issues
     return errorResult;
