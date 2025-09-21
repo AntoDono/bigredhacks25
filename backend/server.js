@@ -108,7 +108,7 @@ rooms = {
 
 // Game configuration
 const GAME_CONFIG = {
-  BATTLE_DURATION: 120, // 2 minutes in seconds
+  BATTLE_DURATION: 180, // 3 minutes in seconds
 };
 
 // Store connected users
