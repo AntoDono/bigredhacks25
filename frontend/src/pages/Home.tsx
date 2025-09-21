@@ -10,8 +10,9 @@ import { Plus, Users, Eye, Copy, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/hooks/useSocket";
-import Profile from "@/components/Profile";
+import ProfileButton from "@/components/ProfileButton";
 import VocabularyDisplay from "@/components/VocabularyDisplay";
+import GameHistory from "@/components/GameHistory";
 import logo from "../assets/logo.png";
 
 const Home = () => {
@@ -185,17 +186,20 @@ const Home = () => {
             <p className="text-gray-600 text-lg">Ready for your next language battle?</p>
           </div>
           
-          <Button
-            variant="outline"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
-            onClick={logout}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={logout}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+            <ProfileButton />
+          </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
           {/* Main Actions Grid */}
           <div className="lg:col-span-2 space-y-6">
             
@@ -365,15 +369,16 @@ const Home = () => {
 
           </div>
 
-          {/* Profile Sidebar */}
+          {/* Vocabulary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-4 space-y-6">
+            <div className="sticky top-4">
               <VocabularyDisplay />
-              <Profile />
-              
             </div>
           </div>
         </div>
+
+        {/* Game History Section - Full Width */}
+        <GameHistory />
       </div>
     </div>
   );
