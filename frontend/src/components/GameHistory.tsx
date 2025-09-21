@@ -117,6 +117,7 @@ const GameHistory = () => {
                             <span className="font-semibold text-sm truncate">{game.targetElement}</span>
                           </div>
                           <Badge variant={game.userWon ? "default" : "secondary"} className="text-xs">
+                            {game.userWon}
                             {game.userWon ? (
                               <>
                                 <Medal className="w-3 h-3 mr-1" />
