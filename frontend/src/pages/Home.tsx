@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { RoomCodeInput } from "@/components/ui/room-code-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
@@ -63,8 +64,8 @@ const Home = () => {
       return;
     }
     
+    // Generate 6-character alphanumeric code without hyphen
     const code = Math.random().toString(36).substring(2, 5).toUpperCase() + 
-                 "-" + 
                  Math.random().toString(36).substring(2, 5).toUpperCase();
     setGeneratedCode(code);
     setIsCreatingRoom(true);
@@ -79,8 +80,8 @@ const Home = () => {
   };
 
   const joinRoom = async () => {
-    if (roomCode.length < 7) {
-      toast.error("Please enter a valid room code (XXX-XXX)");
+    if (roomCode.length < 6) {
+      toast.error("Please enter a valid room code (6 characters)");
       return;
     }
 
@@ -109,8 +110,8 @@ const Home = () => {
   };
 
   const spectateRoom = async () => {
-    if (roomCode.length < 7) {
-      toast.error("Please enter a valid room code (XXX-XXX)");
+    if (roomCode.length < 6) {
+      toast.error("Please enter a valid room code (6 characters)");
       return;
     }
 
@@ -133,8 +134,15 @@ const Home = () => {
     }
   };
 
+  const formatCodeDisplay = (code: string) => {
+    if (code.length <= 3) {
+      return code;
+    }
+    return code.slice(0, 3) + '-' + code.slice(3, 6);
+  };
+
   const copyRoomCode = () => {
-    navigator.clipboard.writeText(generatedCode);
+    navigator.clipboard.writeText(generatedCode); // Copy raw 6-character code
     toast.success("Room code copied to clipboard!");
   };
 
@@ -266,8 +274,8 @@ const Home = () => {
                     <div className="text-center">
                       <Label className="text-sm font-medium text-gray-700 mb-2 block">Your Room Code</Label>
                       <div className="flex items-center gap-2">
-                        <div className="room-code-input bg-gray-50 border border-gray-300 rounded-lg p-4 flex-1 text-gray-900 font-mono text-xl">
-                          {generatedCode}
+                        <div className="room-code-input bg-gray-50 border border-gray-300 rounded-lg p-4 flex-1 text-gray-900 font-mono text-xl text-center">
+                          {formatCodeDisplay(generatedCode)}
                         </div>
                         <Button
                           variant="outline"
@@ -325,13 +333,11 @@ const Home = () => {
                   <Label htmlFor="roomCode" className="text-sm font-medium text-gray-700 mb-2 block">
                     Room Code
                   </Label>
-                  <Input
+                  <RoomCodeInput
                     id="roomCode"
-                    placeholder="XXX-XXX"
                     value={roomCode}
-                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                    className="room-code-input border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
-                    maxLength={7}
+                    onChange={setRoomCode}
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 
@@ -339,7 +345,7 @@ const Home = () => {
                   <Button 
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={joinRoom}
-                    disabled={roomCode.length < 7 || isCheckingRoom}
+                    disabled={roomCode.length < 6 || isCheckingRoom}
                   >
                     <Users className="w-4 h-4 mr-2" />
                     {isCheckingRoom ? "Checking..." : "Join"}
@@ -347,7 +353,7 @@ const Home = () => {
                   <Button 
                     variant="outline"
                     onClick={spectateRoom}
-                    disabled={roomCode.length < 7 || isCheckingRoom}
+                    disabled={roomCode.length < 6 || isCheckingRoom}
                     className="border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     <Eye className="w-4 h-4 mr-2" />

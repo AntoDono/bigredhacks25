@@ -45,8 +45,15 @@ const RoomLobby = ({
     }
   }, [roomData]);
 
+  const formatCodeDisplay = (code: string) => {
+    if (code.length <= 3) {
+      return code;
+    }
+    return code.slice(0, 3) + '-' + code.slice(3, 6);
+  };
+
   const copyRoomCode = () => {
-    navigator.clipboard.writeText(roomCode);
+    navigator.clipboard.writeText(roomCode); // Copy raw 6-character code
     toast.success("Room code copied to clipboard!");
   };
 
@@ -70,7 +77,7 @@ const RoomLobby = ({
           </CardTitle>
           <div className="flex items-center justify-center gap-2 mt-2">
             <Badge variant="outline" className="text-lg font-mono">
-              {roomCode}
+              {formatCodeDisplay(roomCode)}
             </Badge>
             <Button 
               variant="ghost" 

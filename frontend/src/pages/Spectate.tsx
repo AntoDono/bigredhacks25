@@ -39,6 +39,13 @@ const Spectate = () => {
   const [targetWord] = useState("Tormenta");
   const [battleTime, setBattleTime] = useState(60);
 
+  const formatCodeDisplay = (code: string) => {
+    if (!code || code.length <= 3) {
+      return code;
+    }
+    return code.slice(0, 3) + '-' + code.slice(3, 6);
+  };
+
   // Check authentication
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -177,7 +184,7 @@ const Spectate = () => {
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Eye className="w-6 h-6 text-primary" />
-                Spectating Room: {roomCode}
+                Spectating Room: {formatCodeDisplay(roomCode || '')}
               </h1>
               <p className="text-muted-foreground">Watch the battle unfold</p>
             </div>
