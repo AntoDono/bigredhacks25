@@ -23,13 +23,8 @@ import { GAME_CONFIG } from "@/lib/gameConfig";
 const DEFAULT_INITIAL_ELEMENTS = [
   { id: "water", text: "Water", emoji: "💧" },
   { id: "fire", text: "Fire", emoji: "🔥" },
+  { id: "wind", text: "Wind", emoji: "💨" },
   { id: "earth", text: "Earth", emoji: "🌍" },
-  { id: "air", text: "Air", emoji: "💨" },
-  { id: "axe", text: "Axe", emoji: "🪓" },
-  { id: "pickaxe", text: "Pickaxe", emoji: "⛏️" },
-  { id: "stemcell", text: "Stemcell", emoji: "🔬" },
-  { id: "tree", text: "Tree", emoji: "🌳" },
-  { id: "stone", text: "Stone", emoji: "🪨" },
 ];
 
 // All combinations are now handled by the backend LLM - no hardcoded rules!

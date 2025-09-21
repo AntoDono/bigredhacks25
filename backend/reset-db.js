@@ -6,51 +6,89 @@ const { getSupportedLanguages, getElementName, INITIAL_ELEMENTS_CONFIG } = requi
 // Basic element combinations to seed the database
 // Basic element combinations to seed the database
 const basicCombinations = [
-  // Classical elements - core natural processes
-  { element1: 'fire', element2: 'water', result: { element: 'Steam', en_text: 'Steam', emoji: '💨', phonetics: 'steem' } },
-  { element1: 'fire', element2: 'fire', result: { element: 'Lava', en_text: 'Lava', emoji: '🌋', phonetics: 'lah-vah' } },
-  { element1: 'earth', element2: 'water', result: { element: 'Plant', en_text: 'Plant', emoji: '🌱', phonetics: 'plant' } },
-  { element1: 'earth', element2: 'fire', result: { element: 'Sand', en_text: 'Sand', emoji: '🏖️', phonetics: 'sand' } },
-  { element1: 'air', element2: 'water', result: { element: 'Cloud', en_text: 'Cloud', emoji: '☁️', phonetics: 'klowd' } },
-  { element1: 'air', element2: 'earth', result: { element: 'Dust', en_text: 'Dust', emoji: '💨', phonetics: 'dust' } },
+  // Core elements - fundamental interactions
+  { element1: 'fire', element2: 'water', result: { element: 'steam', en_text: 'Steam', emoji: '💨', phonetics: 'steem' } },
+  { element1: 'earth', element2: 'water', result: { element: 'plant', en_text: 'Plant', emoji: '🌱', phonetics: 'plant' } },
+  { element1: 'wind', element2: 'water', result: { element: 'cloud', en_text: 'Cloud', emoji: '☁️', phonetics: 'klowd' } },
+  { element1: 'earth', element2: 'fire', result: { element: 'lava', en_text: 'Lava', emoji: '🌋', phonetics: 'lah-vah' } },
+  { element1: 'wind', element2: 'earth', result: { element: 'dust', en_text: 'Dust', emoji: '💨', phonetics: 'dust' } },
 
-  // Material progression
-  { element1: 'fire', element2: 'stone', result: { element: 'Metal', en_text: 'Metal', emoji: '⚙️', phonetics: 'meh-tal' } },
-  { element1: 'stone', element2: 'stone', result: { element: 'Pressure', en_text: 'Pressure', emoji: '🔨', phonetics: 'presh-ur' } },
-  { element1: 'dust', element2: 'water', result: { element: 'Mud', en_text: 'Mud', emoji: '🟤', phonetics: 'mud' } },
-  { element1: 'mud', element2: 'fire', result: { element: 'Brick', en_text: 'Brick', emoji: '🧱', phonetics: 'brick' } },
+  // Secondary combinations from basics
+  { element1: 'fire', element2: 'fire', result: { element: 'lava', en_text: 'Lava', emoji: '🌋', phonetics: 'lah-vah' } },
+  { element1: 'water', element2: 'water', result: { element: 'ocean', en_text: 'Ocean', emoji: '🌊', phonetics: 'oh-shan' } },
+  { element1: 'dust', element2: 'water', result: { element: 'mud', en_text: 'Mud', emoji: '🟤', phonetics: 'mud' } },
+  { element1: 'mud', element2: 'fire', result: { element: 'stone', en_text: 'Stone', emoji: '🪨', phonetics: 'stone' } },
 
-  // Metal & Tools
-  { element1: 'metal', element2: 'fire', result: { element: 'Sword', en_text: 'Sword', emoji: '⚔️', phonetics: 'sord' } },
-  { element1: 'metal', element2: 'metal', result: { element: 'Machine', en_text: 'Machine', emoji: '🤖', phonetics: 'mah-sheen' } },
-  { element1: 'axe', element2: 'tree', result: { element: 'Wood', en_text: 'Wood', emoji: '🪵', phonetics: 'wood' } },
-  { element1: 'pickaxe', element2: 'stone', result: { element: 'Pebbles', en_text: 'Pebbles', emoji: '🪨', phonetics: 'peb-uls' } },
+  // Weather systems
+  { element1: 'cloud', element2: 'cloud', result: { element: 'storm', en_text: 'Storm', emoji: '⛈️', phonetics: 'storm' } },
+  { element1: 'storm', element2: 'fire', result: { element: 'lightning', en_text: 'Lightning', emoji: '⚡', phonetics: 'lie-ting' } },
+  { element1: 'lightning', element2: 'metal', result: { element: 'electricity', en_text: 'Electricity', emoji: '🔌', phonetics: 'ee-lek-tris-ih-tee' } },
 
   // Nature progression
-  { element1: 'plant', element2: 'plant', result: { element: 'Tree', en_text: 'Tree', emoji: '🌳', phonetics: 'tree' } },
-  { element1: 'tree', element2: 'fire', result: { element: 'Ash', en_text: 'Ash', emoji: '🌫️', phonetics: 'ash' } },
-  { element1: 'wood', element2: 'fire', result: { element: 'Ash', en_text: 'Ash', emoji: '🌫️', phonetics: 'ash' } },
+  { element1: 'plant', element2: 'plant', result: { element: 'tree', en_text: 'Tree', emoji: '🌳', phonetics: 'tree' } },
+  { element1: 'tree', element2: 'tree', result: { element: 'forest', en_text: 'Forest', emoji: '🌲', phonetics: 'for-est' } },
+  { element1: 'stone', element2: 'stone', result: { element: 'mountain', en_text: 'Mountain', emoji: '⛰️', phonetics: 'mown-tin' } },
 
-  // Weather
-  { element1: 'cloud', element2: 'cloud', result: { element: 'Storm', en_text: 'Storm', emoji: '⛈️', phonetics: 'storm' } },
-  { element1: 'storm', element2: 'storm', result: { element: 'Lightning', en_text: 'Lightning', emoji: '⚡', phonetics: 'lie-ting' } },
+  // Materials and crafting
+  { element1: 'stone', element2: 'fire', result: { element: 'metal', en_text: 'Metal', emoji: '⚙️', phonetics: 'meh-tal' } },
+  { element1: 'lava', element2: 'wind', result: { element: 'obsidian', en_text: 'Obsidian', emoji: '⚫', phonetics: 'ob-sid-ee-an' } },
+  { element1: 'lava', element2: 'water', result: { element: 'stone', en_text: 'Stone', emoji: '🪨', phonetics: 'stone' } },
+  { element1: 'fire', element2: 'stone', result: { element: 'glass', en_text: 'Glass', emoji: '🔍', phonetics: 'glass' } },
+  { element1: 'wind', element2: 'fire', result: { element: 'desert', en_text: 'Desert', emoji: '🏜️', phonetics: 'dez-ert' } },
 
-  // Advanced
-  { element1: 'sand', element2: 'air', result: { element: 'Desert', en_text: 'Desert', emoji: '🏜️', phonetics: 'dez-ert' } },
-  { element1: 'sand', element2: 'fire', result: { element: 'Glass', en_text: 'Glass', emoji: '🔍', phonetics: 'glass' } },
-  { element1: 'lightning', element2: 'metal', result: { element: 'Electricity', en_text: 'Electricity', emoji: '🔌', phonetics: 'ee-lek-tris-ih-tee' } },
-  
-  // Missing target elements
-  { element1: 'lava', element2: 'air', result: { element: 'Obsidian', en_text: 'Obsidian', emoji: '⚫', phonetics: 'ob-sid-ee-an' } },
-  { element1: 'lava', element2: 'earth', result: { element: 'Volcano', en_text: 'Volcano', emoji: '🌋', phonetics: 'vol-kay-no' } },
-  { element1: 'water', element2: 'water', result: { element: 'Ocean', en_text: 'Ocean', emoji: '🌊', phonetics: 'oh-shan' } },
-  { element1: 'tree', element2: 'tree', result: { element: 'Forest', en_text: 'Forest', emoji: '🌲', phonetics: 'for-est' } },
-  { element1: 'stone', element2: 'earth', result: { element: 'Mountain', en_text: 'Mountain', emoji: '⛰️', phonetics: 'mown-tin' } },
-  { element1: 'wood', element2: 'stone', result: { element: 'House', en_text: 'House', emoji: '🏠', phonetics: 'hows' } },
-  { element1: 'pressure', element2: 'stone', result: { element: 'Diamond', en_text: 'Diamond', emoji: '💎', phonetics: 'die-mund' } },
-  { element1: 'wood', element2: 'metal', result: { element: 'Tool', en_text: 'Tool', emoji: '🔧', phonetics: 'tool' } },
-  { element1: 'house', element2: 'stone', result: { element: 'Castle', en_text: 'Castle', emoji: '🏰', phonetics: 'kas-ul' } }
+  // Tools and construction
+  { element1: 'metal', element2: 'fire', result: { element: 'sword', en_text: 'Sword', emoji: '⚔️', phonetics: 'sord' } },
+  { element1: 'metal', element2: 'stone', result: { element: 'tool', en_text: 'Tool', emoji: '🔧', phonetics: 'tool' } },
+  { element1: 'metal', element2: 'metal', result: { element: 'machine', en_text: 'Machine', emoji: '🤖', phonetics: 'mah-sheen' } },
+  { element1: 'stone', element2: 'plant', result: { element: 'house', en_text: 'House', emoji: '🏠', phonetics: 'hows' } },
+  { element1: 'house', element2: 'stone', result: { element: 'castle', en_text: 'Castle', emoji: '🏰', phonetics: 'kas-ul' } },
+
+  // Advanced materials
+  { element1: 'stone', element2: 'stone', result: { element: 'pressure', en_text: 'Pressure', emoji: '🔨', phonetics: 'presh-ur' } },
+  { element1: 'pressure', element2: 'fire', result: { element: 'diamond', en_text: 'Diamond', emoji: '💎', phonetics: 'die-mund' } },
+  { element1: 'lava', element2: 'earth', result: { element: 'volcano', en_text: 'Volcano', emoji: '🌋', phonetics: 'vol-kay-no' } }
 ];
+
+/**
+ * Generate inverse combinations for all basic combinations
+ * This ensures that element1 + element2 = element2 + element1
+ * @param {Array} combinations - Array of basic combinations
+ * @returns {Array} - Array with both original and inverse combinations
+ */
+function generateInverseCombinations(combinations) {
+  const allCombinations = [...combinations]; // Start with original combinations
+  
+  for (const combo of combinations) {
+    // Skip if it's already a same-element combination (e.g., fire + fire)
+    if (combo.element1 === combo.element2) {
+      continue;
+    }
+    
+    // Create inverse combination
+    const inverseCombo = {
+      element1: combo.element2,
+      element2: combo.element1,
+      result: combo.result // Same result
+    };
+    
+    // Add inverse if it doesn't already exist
+    const inverseExists = allCombinations.some(existing => 
+      existing.element1 === inverseCombo.element1 && 
+      existing.element2 === inverseCombo.element2
+    );
+    
+    if (!inverseExists) {
+      allCombinations.push(inverseCombo);
+    }
+  }
+  
+  return allCombinations;
+}
+
+// Generate all combinations including inverses
+const allCombinations = generateInverseCombinations(basicCombinations);
+console.log(`📋 Generated ${basicCombinations.length} basic combinations + ${allCombinations.length - basicCombinations.length} inverse combinations = ${allCombinations.length} total combinations`);
+
 /**
  * Generate audio for an element in a specific language
  * @param {string} elementName - Name of the element
@@ -146,32 +184,67 @@ async function resetElementCache() {
     const supportedLanguages = getSupportedLanguages();
     console.log(`   🌍 Generating audio for ${supportedLanguages.length} languages: ${supportedLanguages.join(', ')}`);
     
-    // Insert basic combinations for each language
-    for (const combo of basicCombinations) {
-      
-      // For each supported language, create a cache entry with English element names but translated results
+    // First, collect all unique results to generate audio/phonetics only once per result
+    const uniqueResults = new Map();
+    for (const combo of allCombinations) {
+      const resultKey = combo.result.element.toLowerCase();
+      if (!uniqueResults.has(resultKey)) {
+        uniqueResults.set(resultKey, combo.result);
+      }
+    }
+    
+    console.log(`   🎯 Found ${uniqueResults.size} unique results to process`);
+    
+    // Generate audio and phonetics for each unique result once per language
+    const resultAudioCache = new Map(); // Cache audio/phonetics by result+language
+    for (const [resultKey, result] of uniqueResults) {
+      for (const languageCode of supportedLanguages) {
+        try {
+          const translatedResult = getElementName(resultKey, languageCode);
+          const cacheKey = `${resultKey}-${languageCode}`;
+          
+          console.log(`   🎵 Generating audio for "${translatedResult}" (${languageCode})...`);
+          const audioB64 = await generateAudioForElement(translatedResult, languageCode);
+          const phonetics = generatePhonetics(translatedResult, languageCode);
+          
+          resultAudioCache.set(cacheKey, {
+            element: translatedResult,
+            phonetics: phonetics,
+            audio_b64: audioB64
+          });
+          
+          const audioStatus = audioB64 ? '🔊' : '🔇';
+          console.log(`   ✅ Generated audio for "${translatedResult}" ${audioStatus}`);
+          
+        } catch (error) {
+          console.error(`   ❌ Failed to generate audio for ${resultKey} in ${languageCode}:`, error.message);
+        }
+      }
+    }
+    
+    // Now create cache entries for all combinations, reusing the generated audio/phonetics
+    for (const combo of allCombinations) {
       for (const languageCode of supportedLanguages) {
         try {
           // Use English element names for cache keys (for consistency across languages)
           const [first, second] = [combo.element1.toLowerCase(), combo.element2.toLowerCase()].sort();
+          const resultKey = combo.result.element.toLowerCase();
+          const cacheKey = `${resultKey}-${languageCode}`;
           
-          // Get translated result element name
-          const translatedResult = getElementName(combo.result.element.toLowerCase(), languageCode);
+          // Get the pre-generated audio and phonetics
+          const audioData = resultAudioCache.get(cacheKey);
+          if (!audioData) {
+            console.warn(`   ⚠️  No audio data found for ${resultKey} in ${languageCode}, skipping...`);
+            continue;
+          }
           
-          // Generate audio for the result element in this language
-          console.log(`   🎵 Generating audio for "${translatedResult}" (${languageCode})...`);
-          const audioB64 = await generateAudioForElement(translatedResult, languageCode);
-          
-          // Generate phonetics for the translated element
-          const phonetics = generatePhonetics(translatedResult, languageCode);
-          
-          // Create result with translated name and audio
+          // Create result with translated name and cached audio/phonetics
           const result = {
-            element: translatedResult, // Use translated name
+            element: audioData.element,
             en_text: combo.result.element, // Keep original English name for target matching
             emoji: combo.result.emoji,
-            phonetics: phonetics, // Add phonetics for pronunciation guide
-            audio_b64: audioB64
+            phonetics: audioData.phonetics,
+            audio_b64: audioData.audio_b64
           };
           
           const cacheEntry = new ElementCache({
@@ -183,8 +256,8 @@ async function resetElementCache() {
           
           await cacheEntry.save();
           
-          const audioStatus = audioB64 ? '🔊' : '🔇';
-          console.log(`   ✅ [${languageCode}] ${first} + ${second} = ${translatedResult} ${combo.result.emoji} ${audioStatus}`);
+          const audioStatus = audioData.audio_b64 ? '🔊' : '🔇';
+          console.log(`   ✅ [${languageCode}] ${first} + ${second} = ${audioData.element} ${combo.result.emoji} ${audioStatus}`);
           
         } catch (error) {
           console.error(`   ❌ Failed to create cache entry for ${languageCode}:`, error.message);
@@ -192,9 +265,9 @@ async function resetElementCache() {
       }
     }
     
-    const totalEntries = basicCombinations.length * supportedLanguages.length;
+    const totalEntries = allCombinations.length * supportedLanguages.length;
     console.log(`\n🎉 Successfully reset database with ${totalEntries} multilingual combinations!`);
-    console.log(`   📊 ${basicCombinations.length} combinations × ${supportedLanguages.length} languages`);
+    console.log(`   📊 ${allCombinations.length} combinations × ${supportedLanguages.length} languages`);
     
     // Generate audio for initial elements
     console.log('\n🎵 Generating audio for initial elements...');

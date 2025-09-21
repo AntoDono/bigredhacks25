@@ -45,6 +45,17 @@ const ELEMENT_TRANSLATIONS = {
     'ko-KR': '공기',
     'zh-CN': '空气'
   },
+  'wind': {
+    'en-US': 'Wind',
+    'es-ES': 'Viento',
+    'fr-FR': 'Vent',
+    'de-DE': 'Wind',
+    'it-IT': 'Vento',
+    'pt-BR': 'Vento',
+    'ja-JP': '風',
+    'ko-KR': '바람',
+    'zh-CN': '风'
+  },
   'axe': {
     'en-US': 'Axe',
     'es-ES': 'Hacha',
@@ -426,12 +437,8 @@ const ELEMENT_TRANSLATIONS = {
 const INITIAL_ELEMENTS_CONFIG = [
   { id: "water", emoji: "💧" },
   { id: "fire", emoji: "🔥" },
-  { id: "earth", emoji: "🌍" },
-  { id: "air", emoji: "💨" },
-  { id: "axe", emoji: "🪓" },
-  { id: "pickaxe", emoji: "⛏️" },
-  { id: "tree", emoji: "🌳" },
-  { id: "stone", emoji: "🪨" }
+  { id: "wind", emoji: "💨" },
+  { id: "earth", emoji: "🌍" }
 ];
 
 /**
