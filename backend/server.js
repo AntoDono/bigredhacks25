@@ -1133,12 +1133,15 @@ app.post('/api/analyze-pronunciation', authenticateToken, async (req, res) => {
     // If pronunciation is correct and this is a battle context with a room, check for game end
     if (result.is_correct && context === 'battle' && roomId) {
       console.log(`🎯 Pronunciation correct for "${expectedText}" in battle mode, checking for game end...`);
+      console.log(`🔍 Looking for user ID: ${req.user.userId} in connected users:`, Object.keys(connectedUsers).map(id => ({ socketId: id, userId: connectedUsers[id].userId })));
       
       // Find the user's socket to trigger game end check
-      const userSocket = Object.values(connectedUsers).find(user => user.userId === req.user.id);
+      const userSocket = Object.values(connectedUsers).find(user => user.userId === req.user.userId);
       if (userSocket) {
-        const socketId = Object.keys(connectedUsers).find(key => connectedUsers[key].userId === req.user.id);
+        const socketId = Object.keys(connectedUsers).find(key => connectedUsers[key].userId === req.user.userId);
         const socket = io.sockets.sockets.get(socketId);
+        
+        console.log(`🔍 Found user socket: ${socketId}, socket exists: ${!!socket}`);
         
         if (socket) {
           // Create element data for game end check
@@ -1147,10 +1150,16 @@ app.post('/api/analyze-pronunciation', authenticateToken, async (req, res) => {
             en_text: expectedText
           };
           
+          console.log(`🎯 Checking game end for room ${roomId} with element data:`, elementData);
+          
           // Check for game end after successful pronunciation
           const gameEnded = await checkForGameEnd(socket, roomId, elementData);
           console.log(`🎯 Game end check result: ${gameEnded}`);
+        } else {
+          console.log(`❌ Socket not found for user ${req.user.userId}`);
         }
+      } else {
+        console.log(`❌ User not found in connected users: ${req.user.userId}`);
       }
     }
     
