@@ -14,6 +14,7 @@ import RoomLobby from "@/components/battle/RoomLobby";
 import GameOverlay from "@/components/notifications/GameOverlay";
 import ElementNotification from "@/components/notifications/ElementNotification";
 import SpeechRecognitionModal from "@/components/battle/SpeechRecognitionModal";
+import MicrophonePermissionModal from "@/components/battle/MicrophonePermissionModal";
 import { playBase64Audio } from "@/lib/utils";
 import { API_BASE_URL } from "@/lib/api";
 import { GAME_CONFIG } from "@/lib/gameConfig";
@@ -78,6 +79,11 @@ const Battle = () => {
     pendingElementData: any;
   } | null>(null);
   const [gameLanguage, setGameLanguage] = useState<string>('en-US');
+  
+  // Microphone permission state
+  const [showMicrophonePermission, setShowMicrophonePermission] = useState(false);
+  const [microphonePermissionGranted, setMicrophonePermissionGranted] = useState(false);
+  const [hasRequestedPermission, setHasRequestedPermission] = useState(false);
 
   // Convert language code to simple format for voice analysis
   const getSimpleLanguageCode = (fullLanguageCode: string): string => {
@@ -126,12 +132,18 @@ const Battle = () => {
         
         // Fetch language-specific initial elements
         fetchInitialElements(language);
+        
+        // Request microphone permission after joining room
+        if (!hasRequestedPermission) {
+          setShowMicrophonePermission(true);
+          setHasRequestedPermission(true);
+        }
       } catch (error) {
         console.error('Error joining room:', error);
         toast.error('Failed to join room');
       }
     }
-  }, [connected, roomCode, roomJoined, joinRoom, location.state]);
+  }, [connected, roomCode, roomJoined, joinRoom, location.state, hasRequestedPermission]);
 
   // Handle room join errors - show error but don't navigate since validation was done in Home
   useEffect(() => {
@@ -225,13 +237,13 @@ const Battle = () => {
 
         // If audio is available, show speech recognition modal first
         if (data.audio_b64) {
-          setSpeechModalData({
+          const elementData = {
             elementName: data.element,
             elementEmoji: data.emoji || '✨',
             groundTruthAudio: data.audio_b64,
             pendingElementData: { data, newElement }
-          });
-          setShowSpeechModal(true);
+          };
+          handleSpeechRecognitionRequest(elementData);
           return; // Don't add element to game yet - wait for speech recognition success
         }
 
@@ -437,6 +449,31 @@ const Battle = () => {
 
     // Use socket to create element with English names
     createElement(englishElement1, englishElement2);
+  };
+
+  // Microphone permission handlers
+  const handleMicrophonePermissionGranted = () => {
+    setMicrophonePermissionGranted(true);
+    setShowMicrophonePermission(false);
+    console.log('🎤 Microphone permission granted - speech challenges enabled');
+  };
+
+  const handleMicrophonePermissionDenied = () => {
+    setMicrophonePermissionGranted(false);
+    setShowMicrophonePermission(false);
+    console.log('🎤 Microphone permission denied - speech challenges disabled');
+  };
+
+  const handleSpeechRecognitionRequest = (elementData: any) => {
+    // Check if microphone permission was granted
+    if (!microphonePermissionGranted) {
+      toast.error("Microphone access is required for speech challenges. Please allow microphone access to continue.");
+      return;
+    }
+    
+    // Proceed with speech recognition
+    setSpeechModalData(elementData);
+    setShowSpeechModal(true);
   };
 
   const handleStartGame = () => {
@@ -867,6 +904,13 @@ const Battle = () => {
           context="battle"
         />
       )}
+
+      {/* Microphone Permission Modal */}
+      <MicrophonePermissionModal
+        isOpen={showMicrophonePermission}
+        onPermissionGranted={handleMicrophonePermissionGranted}
+        onPermissionDenied={handleMicrophonePermissionDenied}
+      />
     </div>
   );
 };

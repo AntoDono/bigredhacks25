@@ -4,6 +4,7 @@ const { textToSpeech } = require('./tts.js');
 const { getSupportedLanguages, getElementName, INITIAL_ELEMENTS_CONFIG } = require('./languages.js');
 
 // Basic element combinations to seed the database
+// Basic element combinations to seed the database
 const basicCombinations = [
   // Classical elements - core natural processes
   { element1: 'fire', element2: 'water', result: { element: 'Steam', emoji: '💨' } },
@@ -15,8 +16,9 @@ const basicCombinations = [
 
   // Material progression
   { element1: 'fire', element2: 'stone', result: { element: 'Metal', emoji: '⚙️' } },
-  { element1: 'stone', element2: 'stone', result: { element: 'Brick', emoji: '🧱' } },
+  { element1: 'stone', element2: 'stone', result: { element: 'Pressure', emoji: '🔨' } },
   { element1: 'dust', element2: 'water', result: { element: 'Mud', emoji: '🟤' } },
+  { element1: 'mud', element2: 'fire', result: { element: 'Brick', emoji: '🧱' } },
 
   // Metal & Tools
   { element1: 'metal', element2: 'fire', result: { element: 'Sword', emoji: '⚔️' } },
@@ -45,11 +47,10 @@ const basicCombinations = [
   { element1: 'tree', element2: 'tree', result: { element: 'Forest', emoji: '🌲' } },
   { element1: 'stone', element2: 'earth', result: { element: 'Mountain', emoji: '⛰️' } },
   { element1: 'wood', element2: 'stone', result: { element: 'House', emoji: '🏠' } },
-  { element1: 'stone', element2: 'fire', result: { element: 'Diamond', emoji: '💎' } },
+  { element1: 'pressure', element2: 'stone', result: { element: 'Diamond', emoji: '💎' } },
   { element1: 'wood', element2: 'metal', result: { element: 'Tool', emoji: '🔧' } },
   { element1: 'house', element2: 'stone', result: { element: 'Castle', emoji: '🏰' } }
 ];
-
 /**
  * Generate audio for an element in a specific language
  * @param {string} elementName - Name of the element
