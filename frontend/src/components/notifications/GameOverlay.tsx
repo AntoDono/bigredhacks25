@@ -12,7 +12,6 @@ interface GameOverlayProps {
   winnerName?: string;
   isPlayerWinner?: boolean;
   onClose?: () => void;
-  onPlayAgain?: () => void;
   onViewStory?: () => void;
 }
 
@@ -25,7 +24,6 @@ const GameOverlay = ({
   winnerName,
   isPlayerWinner,
   onClose,
-  onPlayAgain,
   onViewStory
 }: GameOverlayProps) => {
   const [visible, setVisible] = useState(false);
@@ -145,12 +143,6 @@ const GameOverlay = ({
 
           {/* Actions */}
           <div className="space-y-3">
-            {onPlayAgain && (
-              <Button onClick={onPlayAgain} className="w-full" size="lg">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Play Again
-              </Button>
-            )}
             
             {onViewStory && (
               <Button onClick={onViewStory} variant="outline" className="w-full">
@@ -160,7 +152,7 @@ const GameOverlay = ({
             
             {onClose && (
               <Button onClick={onClose} variant="ghost" className="w-full">
-                Close
+                Return to Lobby
               </Button>
             )}
           </div>

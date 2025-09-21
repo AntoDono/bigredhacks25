@@ -813,9 +813,6 @@ const Battle = () => {
                 
                 {gameEnded && (
                   <div className="mt-4 flex justify-center gap-2">
-                    <Button onClick={restartBattle} variant="outline" className="shadow-soft hover:shadow-medium">
-                      Play Again
-                    </Button>
                     <Button onClick={() => setShowStory(true)} variant="gradient" className="shadow-medium hover:shadow-large">
                       View Story
                     </Button>
@@ -855,11 +852,7 @@ const Battle = () => {
         targetElement={gameOverlayData?.targetElement}
         winnerName={gameOverlayData?.winnerName}
         isPlayerWinner={gameOverlayData?.isPlayerWinner}
-        onClose={() => setShowGameOverlay(false)}
-        onPlayAgain={() => {
-          setShowGameOverlay(false);
-          restartBattle();
-        }}
+        onClose={() => navigate('/home')}
         onViewStory={() => {
           setShowGameOverlay(false);
           setShowStory(true);

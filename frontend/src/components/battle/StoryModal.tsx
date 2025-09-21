@@ -132,8 +132,8 @@ const StoryModal = ({ open, onOpenChange, elements, playerWon, targetWord }: Sto
 
           {/* Action Buttons */}
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Close
+            <Button variant="outline" onClick={() => window.location.href = '/home'}>
+              Return to Lobby
             </Button>
             <Button onClick={() => window.location.reload()}>
               New Battle
