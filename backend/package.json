@@ -6,11 +6,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "concurrently \"nodemon server.js\" \"python3 voice_service.py\"",
+    "dev:node": "nodemon server.js",
+    "dev:python": "python3 voice_service.py"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/speech": "^7.2.0",
     "@google-cloud/text-to-speech": "^6.3.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -18,8 +21,15 @@
     "express": "^5.1.0",
     "groq-sdk": "^0.32.0",
     "jsonwebtoken": "^9.0.2",
+    "levenshtein-edit-distance": "^3.0.1",
     "mongoose": "^8.18.1",
+    "node-wav": "^0.0.2",
     "nodemon": "^3.1.10",
-    "socket.io": "^4.8.1"
+    "phonetics": "^1.0.7",
+    "socket.io": "^4.8.1",
+    "speech-to-text": "^3.0.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

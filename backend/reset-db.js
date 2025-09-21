@@ -7,6 +7,7 @@ const { getSupportedLanguages, getElementName, INITIAL_ELEMENTS_CONFIG } = requi
 const basicCombinations = [
   // Classical elements - core natural processes
   { element1: 'fire', element2: 'water', result: { element: 'Steam', emoji: '💨' } },
+  { element1: 'fire', element2: 'fire', result: { element: 'Lava', emoji: '🌋' } },
   { element1: 'earth', element2: 'water', result: { element: 'Plant', emoji: '🌱' } },
   { element1: 'earth', element2: 'fire', result: { element: 'Sand', emoji: '🏖️' } },
   { element1: 'air', element2: 'water', result: { element: 'Cloud', emoji: '☁️' } },
@@ -35,7 +36,18 @@ const basicCombinations = [
   // Advanced
   { element1: 'sand', element2: 'air', result: { element: 'Desert', emoji: '🏜️' } },
   { element1: 'sand', element2: 'fire', result: { element: 'Glass', emoji: '🔍' } },
-  { element1: 'lightning', element2: 'metal', result: { element: 'Electricity', emoji: '🔌' } }
+  { element1: 'lightning', element2: 'metal', result: { element: 'Electricity', emoji: '🔌' } },
+  
+  // Missing target elements
+  { element1: 'lava', element2: 'air', result: { element: 'Obsidian', emoji: '⚫' } },
+  { element1: 'lava', element2: 'earth', result: { element: 'Volcano', emoji: '🌋' } },
+  { element1: 'water', element2: 'water', result: { element: 'Ocean', emoji: '🌊' } },
+  { element1: 'tree', element2: 'tree', result: { element: 'Forest', emoji: '🌲' } },
+  { element1: 'stone', element2: 'earth', result: { element: 'Mountain', emoji: '⛰️' } },
+  { element1: 'wood', element2: 'stone', result: { element: 'House', emoji: '🏠' } },
+  { element1: 'stone', element2: 'fire', result: { element: 'Diamond', emoji: '💎' } },
+  { element1: 'wood', element2: 'metal', result: { element: 'Tool', emoji: '🔧' } },
+  { element1: 'house', element2: 'stone', result: { element: 'Castle', emoji: '🏰' } }
 ];
 
 /**

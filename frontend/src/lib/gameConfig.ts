@@ -9,12 +9,11 @@ export const GAME_CONFIG = {
   BATTLE_DURATION: 120, // 2 minutes - main game timer
   
   // Speech Recognition Settings
-  SPEECH_RECOGNITION_THRESHOLD: 0.7, // 70% similarity required
   SPEECH_SUCCESS_AUTO_CLOSE_DELAY: 1000, // 1 second delay before auto-closing modal
   
   // Audio Settings
   AUDIO_PLAYBACK_VOLUME: 0.5, // Volume for element audio playback
-  AUTO_PLAY_DELAY: 500, // Delay before auto-playing pronunciation audio
+  AUTO_PLAY_DELAY: 200, // Delay before auto-playing pronunciation audio
   
   // UI Settings
   ELEMENT_NOTIFICATION_DURATION: 4000, // 4 seconds

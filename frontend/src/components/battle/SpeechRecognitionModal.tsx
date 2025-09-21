@@ -4,9 +4,10 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Mic, MicOff, Play, RefreshCw, Check } from "lucide-react";
+import { Mic, MicOff, Play, RefreshCw, Check, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import { GAME_CONFIG } from "@/lib/gameConfig";
+import { api } from "@/lib/api";
 
 // Custom DialogContent without close button
 const DialogContentNoClose = React.forwardRef<
@@ -36,7 +37,8 @@ interface SpeechRecognitionModalProps {
   elementName: string;
   elementEmoji: string;
   groundTruthAudio: string; // base64 audio data
-  threshold?: number; // threshold for matching (default 0.7 = 70%)
+  language?: string; // language code (e.g., 'en', 'es', 'fr')
+  context?: 'battle' | 'practice'; // context to determine auto-start behavior
 }
 
 const SpeechRecognitionModal = ({
@@ -46,7 +48,8 @@ const SpeechRecognitionModal = ({
   elementName,
   elementEmoji,
   groundTruthAudio,
-  threshold = GAME_CONFIG.SPEECH_RECOGNITION_THRESHOLD
+  language = 'en',
+  context = 'practice'
 }: SpeechRecognitionModalProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
@@ -54,21 +57,17 @@ const SpeechRecognitionModal = ({
   const [matchPercentage, setMatchPercentage] = useState<number | null>(null);
   const [isPassed, setIsPassed] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const [analysisDetails, setAnalysisDetails] = useState<{
+    transcription?: string;
+    transcriptionMatch?: boolean;
+    spectral?: number;
+    prosodic?: number;
+    phonetic?: number;
+    confidence?: number;
+  } | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const audioContextRef = useRef<AudioContext | null>(null);
-
-  useEffect(() => {
-    // Initialize audio context
-    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    return () => {
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
-      }
-    };
-  }, []);
 
   // Auto-play ground truth audio when modal opens
   useEffect(() => {
@@ -81,6 +80,20 @@ const SpeechRecognitionModal = ({
       return () => clearTimeout(timer);
     }
   }, [isOpen, groundTruthAudio]);
+
+  // Auto-start recording when in battle context
+  useEffect(() => {
+    if (isOpen && context === 'battle' && !isRecording && !recordedAudio) {
+      console.log('🎯 Battle mode: Auto-starting recording in', GAME_CONFIG.AUTO_PLAY_DELAY + 2000, 'ms');
+      // Start recording after ground truth audio plays and a short delay
+      const timer = setTimeout(() => {
+        console.log('🎯 Battle mode: Starting auto-recording now');
+        startRecording();
+      }, GAME_CONFIG.AUTO_PLAY_DELAY );
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, context, isRecording, recordedAudio]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -109,8 +122,11 @@ const SpeechRecognitionModal = ({
   }, [isOpen, isRecording, isAnalyzing]);
 
   const startRecording = async () => {
+    console.log('🎤 startRecording called');
     try {
+      console.log('🎤 Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('🎤 Microphone access granted, creating MediaRecorder...');
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
@@ -141,10 +157,12 @@ const SpeechRecognitionModal = ({
         stream.getTracks().forEach(track => track.stop());
       };
 
+      console.log('🎤 Starting MediaRecorder...');
       mediaRecorder.start();
       setIsRecording(true);
       setMatchPercentage(null);
       setIsPassed(false);
+      console.log('🎤 Recording started successfully!');
       
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -164,27 +182,87 @@ const SpeechRecognitionModal = ({
     setAttempts(prev => prev + 1);
 
     try {
-      // Use a simpler approach: compare audio duration and basic characteristics
-      const similarity = await compareAudioSimple(gtAudio, recAudio);
+      // Call backend API for pronunciation analysis
+      const result = await api.analyzePronunciation({
+        groundTruthAudio: gtAudio,
+        userAudio: recAudio,
+        expectedText: elementName,
+        language: language,
+        context: context
+      });
+
+      console.log('Backend analysis result:', result);
+      console.log('Context:', context);
+      console.log('Overall similarity:', result.features?.overall);
+      console.log('is_correct from backend:', result.is_correct);
+
+      // Store the overall similarity score for display purposes
+      const similarity = result.features?.overall || 0;
       setMatchPercentage(similarity);
 
-      // Check if passed threshold
-      const passed = similarity >= threshold;
-      setIsPassed(passed);
+      // Use the backend's is_correct determination based on context
+      const isCorrect = result.is_correct || false;
+      console.log('Final isCorrect value:', isCorrect);
+      setIsPassed(isCorrect);
 
-      if (passed) {
-        toast.success(`Perfect! ${Math.round(similarity * 100)}% match`);
+      // Store detailed analysis for display
+      const details = {
+        transcription: result.transcription,
+        transcriptionMatch: isCorrect, // Use the backend's determination
+        spectral: Math.round((result.features?.spectral || 0) * 100),
+        prosodic: Math.round((result.features?.prosodic || 0) * 100),
+        phonetic: Math.round((result.features?.phonetic || 0) * 100),
+        confidence: Math.round(result.confidence * 100)
+      };
+      
+      setAnalysisDetails(details);
+      
+      // Log detailed analysis
+      console.log('Pronunciation Analysis:', {
+        word: elementName,
+        context: context,
+        isCorrect: isCorrect,
+        overall: Math.round(similarity * 100),
+        ...details
+      });
+
+      if (isCorrect) {
+        if (context === 'battle') {
+          toast.success(`Great pronunciation! Similarity: ${Math.round(similarity * 100)}%`);
+        } else {
+          toast.success(`Perfect! You said "${result.transcription}" correctly!`);
+        }
+        
         setTimeout(() => {
           onSuccess();
           onClose(); // Auto-close the modal after success
         }, GAME_CONFIG.SPEECH_SUCCESS_AUTO_CLOSE_DELAY);
       } else {
-        toast.error(`${Math.round(similarity * 100)}% match. Need ${Math.round(threshold * 100)}% to continue.`);
+        if (context === 'battle') {
+          toast.error(`Pronunciation needs improvement. Similarity: ${Math.round(similarity * 100)}% (need 70%+)`);
+        } else {
+          const actualWord = result.transcription || 'nothing detected';
+          toast.error(`You said "${actualWord}" but we need "${elementName}". Try again!`);
+        }
       }
 
     } catch (error) {
       console.error('Audio analysis error:', error);
-      toast.error('Failed to analyze audio');
+      toast.error('Failed to analyze audio - please try again');
+      
+      // No fallback threshold - just fail gracefully with 0% similarity
+      setMatchPercentage(0);
+      setIsPassed(false);
+      
+      // Set empty analysis details
+      setAnalysisDetails({
+        transcription: 'Error analyzing audio',
+        transcriptionMatch: false,
+        spectral: 0,
+        prosodic: 0,
+        phonetic: 0,
+        confidence: 0
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -197,56 +275,6 @@ const SpeechRecognitionModal = ({
     }
 
     await analyzeAudioWithData(groundTruthAudio, recordedAudio);
-  };
-
-  const compareAudioSimple = async (groundTruthB64: string, recordedB64: string): Promise<number> => {
-    try {
-      // Simple comparison based on audio characteristics
-      const gtAudio = new Audio(`data:audio/mp3;base64,${groundTruthB64}`);
-      const recAudio = new Audio(`data:audio/wav;base64,${recordedB64}`);
-
-      // Wait for both audio elements to load metadata
-      await Promise.all([
-        new Promise(resolve => {
-          gtAudio.addEventListener('loadedmetadata', resolve);
-          gtAudio.addEventListener('error', resolve);
-          gtAudio.load();
-        }),
-        new Promise(resolve => {
-          recAudio.addEventListener('loadedmetadata', resolve);
-          recAudio.addEventListener('error', resolve);
-          recAudio.load();
-        })
-      ]);
-
-      // Compare durations (basic similarity metric)
-      const gtDuration = gtAudio.duration || 1;
-      const recDuration = recAudio.duration || 1;
-      
-      // Duration similarity (closer durations = higher similarity)
-      const durationSimilarity = 1 - Math.abs(gtDuration - recDuration) / Math.max(gtDuration, recDuration);
-      
-      // Compare audio data sizes (rough approximation of content similarity)
-      const gtSize = groundTruthB64.length;
-      const recSize = recordedB64.length;
-      const sizeSimilarity = 1 - Math.abs(gtSize - recSize) / Math.max(gtSize, recSize);
-      
-      // For demo purposes, we'll use a combination of duration and size similarity
-      // In a real implementation, you'd want to use more sophisticated audio analysis
-      const baseSimilarity = (durationSimilarity * 0.6 + sizeSimilarity * 0.4);
-      
-      // Add some randomness to simulate real pronunciation checking
-      // but bias towards success for better user experience
-      const randomFactor = 0.1 + Math.random() * 0.2; // 0.1 to 0.3
-      const finalSimilarity = Math.min(1, baseSimilarity + randomFactor);
-      
-      return finalSimilarity;
-      
-    } catch (error) {
-      console.warn('Audio comparison failed, using fallback similarity:', error);
-      // Fallback: return a moderate similarity score
-      return 0.6 + Math.random() * 0.2; // 60-80% similarity
-    }
   };
 
   const playGroundTruthAudio = async () => {
@@ -281,6 +309,13 @@ const SpeechRecognitionModal = ({
     setRecordedAudio(null);
     setMatchPercentage(null);
     setIsPassed(false);
+    setAnalysisDetails(null);
+  };
+
+  const skipPronunciation = () => {
+    toast.info(`Skipped pronunciation challenge for "${elementName}"`);
+    onSuccess(); // Treat skip as success to continue the game
+    onClose();
   };
 
   return (
@@ -297,11 +332,14 @@ const SpeechRecognitionModal = ({
           {/* Instructions */}
           <Card className="p-4 bg-blue-50 dark:bg-blue-950">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              The correct pronunciation will play automatically. Then record yourself saying "{elementName}". 
-              You need at least {Math.round(threshold * 100)}% similarity to proceed.
+              The correct pronunciation will play automatically. {context === 'battle' 
+                ? 'Recording will start automatically after the audio plays. ' 
+                : 'Then record yourself saying '
+              }"{elementName}". 
+              Say the word clearly for speech recognition to detect it correctly.
             </p>
             <p className="text-xs text-blue-600 dark:text-blue-300 mt-2 font-medium">
-              💡 Press <kbd className="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs">Enter</kbd> to start/stop recording
+              💡 Press <kbd className="px-1 py-0.5 bg-blue-100 dark:bg-blue-800 rounded text-xs">Enter</kbd> to {context === 'battle' ? 'stop recording' : 'start/stop recording'}
             </p>
           </Card>
 
@@ -320,9 +358,11 @@ const SpeechRecognitionModal = ({
 
           {/* Recording Controls */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Record your pronunciation:</label>
+            <label className="text-sm font-medium">
+              {context === 'battle' ? 'Recording automatically...' : 'Record your pronunciation:'}
+            </label>
             <div className="flex gap-2">
-              {!isRecording ? (
+              {context === 'practice' && !isRecording ? (
                 <Button
                   onClick={startRecording}
                   className="flex-1"
@@ -332,7 +372,7 @@ const SpeechRecognitionModal = ({
                   {recordedAudio ? "Record Again" : "Start Recording"}
                   <kbd className="ml-2 px-1 py-0.5 bg-white/20 rounded text-xs">Enter</kbd>
                 </Button>
-              ) : (
+              ) : context === 'practice' && isRecording ? (
                 <Button
                   onClick={stopRecording}
                   className="flex-1"
@@ -342,7 +382,27 @@ const SpeechRecognitionModal = ({
                   Stop Recording & Check
                   <kbd className="ml-2 px-1 py-0.5 bg-white/20 rounded text-xs">Enter</kbd>
                 </Button>
-              )}
+              ) : context === 'battle' && isRecording ? (
+                <Button
+                  onClick={stopRecording}
+                  className="flex-1"
+                  variant="destructive"
+                >
+                  <MicOff className="w-4 h-4 mr-2" />
+                  Stop Recording & Check
+                  <kbd className="ml-2 px-1 py-0.5 bg-white/20 rounded text-xs">Enter</kbd>
+                </Button>
+              ) : context === 'battle' && !isRecording && recordedAudio ? (
+                <Button
+                  onClick={startRecording}
+                  className="flex-1"
+                  variant="outline"
+                >
+                  <Mic className="w-4 h-4 mr-2" />
+                  Record Again
+                  <kbd className="ml-2 px-1 py-0.5 bg-white/20 rounded text-xs">Enter</kbd>
+                </Button>
+              ) : null}
 
               {recordedAudio && (
                 <Button
@@ -354,7 +414,7 @@ const SpeechRecognitionModal = ({
                 </Button>
               )}
 
-              {recordedAudio && (
+              {recordedAudio && context === 'practice' && (
                 <Button
                   onClick={resetRecording}
                   variant="outline"
@@ -382,25 +442,93 @@ const SpeechRecognitionModal = ({
           {isAnalyzing && (
             <div className="flex items-center justify-center gap-2 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
               <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
-              <span className="text-sm text-blue-800 dark:text-blue-200">Analyzing pronunciation...</span>
+              <span className="text-sm text-blue-800 dark:text-blue-200">Analyzing pronunciation with ML models...</span>
             </div>
           )}
 
           {/* Results */}
-          {matchPercentage !== null && (
+          {matchPercentage !== null && analysisDetails && (
             <Card className={`p-4 ${isPassed ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`font-medium ${isPassed ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
-                    Match: {Math.round(matchPercentage * 100)}%
-                  </p>
-                  <p className={`text-sm ${isPassed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {isPassed ? 'Great job! Continuing automatically...' : `Need ${Math.round(threshold * 100)}% to continue. Try recording again!`}
-                  </p>
+              <div className="space-y-3">
+                {/* Main Result */}
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className={`font-medium ${isPassed ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                      {isPassed ? '✓ Pronunciation Accepted!' : '✗ Pronunciation Needs Improvement'}
+                    </p>
+                    <p className={`text-sm ${isPassed ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {isPassed 
+                        ? (context === 'battle' ? 'Great job! Continuing automatically...' : 'Perfect! Continuing automatically...')
+                        : (context === 'battle' ? 'Try speaking more clearly for better similarity.' : 'Try recording the word again clearly.')
+                      }
+                    </p>
+                  </div>
+                  
+                  {/* Success icon or Skip button */}
+                  {isPassed && (
+                    <Check className="w-6 h-6 text-green-600" />
+                  )}
+                  
+                  <Button
+                    onClick={skipPronunciation}
+                    variant="outline"
+                    size="sm"
+                    className="text-gray-600 hover:text-gray-800 border-gray-300 ml-3"
+                  >
+                    <SkipForward className="w-4 h-4 mr-2" />
+                    Skip This Word
+                  </Button>
                 </div>
-                {isPassed && (
-                  <Check className="w-6 h-6 text-green-600" />
-                )}
+
+                {/* Transcription Details */}
+                <div className="border-t pt-3">
+                  <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {context === 'battle' ? 'Analysis Results:' : 'Speech Recognition:'}
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Expected: </span>
+                    <span className="font-medium">{elementName}</span>
+                  </div>
+                  {context === 'practice' && (
+                    <div className="text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Detected: </span>
+                      <span className={`font-medium ${analysisDetails.transcriptionMatch ? 'text-green-600' : 'text-red-600'}`}>
+                        {analysisDetails.transcription || 'No speech detected'}
+                      </span>
+                    </div>
+                  )}
+                  {context === 'battle' && (
+                    <div className="text-sm">
+                      <span className="text-gray-600 dark:text-gray-400">Similarity: </span>
+                      <span className={`font-medium ${isPassed ? 'text-green-600' : 'text-red-600'}`}>
+                        {Math.round((matchPercentage || 0) * 100)}% {isPassed ? '(≥70%)' : '(<70%)'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Feature Analysis for Display */}
+                <div className="border-t pt-3">
+                  <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Audio Analysis:</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Spectral:</span>
+                      <span>{analysisDetails.spectral}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Prosodic:</span>
+                      <span>{analysisDetails.prosodic}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Phonetic:</span>
+                      <span>{analysisDetails.phonetic}%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Confidence:</span>
+                      <span>{analysisDetails.confidence}%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </Card>
           )}

@@ -77,6 +77,23 @@ const Battle = () => {
     groundTruthAudio: string;
     pendingElementData: any;
   } | null>(null);
+  const [gameLanguage, setGameLanguage] = useState<string>('en-US');
+
+  // Convert language code to simple format for voice analysis
+  const getSimpleLanguageCode = (fullLanguageCode: string): string => {
+    const langMap: { [key: string]: string } = {
+      'en-US': 'en',
+      'es-ES': 'es', 
+      'fr-FR': 'fr',
+      'de-DE': 'de',
+      'it-IT': 'it',
+      'pt-BR': 'pt',
+      'ja-JP': 'ja',
+      'ko-KR': 'ko',
+      'zh-CN': 'zh'
+    };
+    return langMap[fullLanguageCode] || 'en';
+  };
 
   // Check authentication
   useEffect(() => {
@@ -89,6 +106,7 @@ const Battle = () => {
   useEffect(() => {
     if (connected && roomCode && !roomJoined) {
       const language = location.state?.language || 'en-US';
+      setGameLanguage(language); // Store the game language
       const roomName = `Battle Room ${roomCode}`;
       const roomDescription = `Real-time battle room`;
       joinRoom(roomCode, roomName, roomDescription, language);
@@ -824,7 +842,8 @@ const Battle = () => {
           elementName={speechModalData.elementName}
           elementEmoji={speechModalData.elementEmoji}
           groundTruthAudio={speechModalData.groundTruthAudio}
-          threshold={GAME_CONFIG.SPEECH_RECOGNITION_THRESHOLD}
+          language={getSimpleLanguageCode(gameLanguage)}
+          context="battle"
         />
       )}
     </div>

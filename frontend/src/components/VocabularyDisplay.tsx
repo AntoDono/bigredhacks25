@@ -26,6 +26,22 @@ const VocabularyDisplay = () => {
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(true);
+
+  // Convert language code to simple format for voice analysis
+  const getSimpleLanguageCode = (fullLanguageCode: string): string => {
+    const langMap: { [key: string]: string } = {
+      'en-US': 'en',
+      'es-ES': 'es', 
+      'fr-FR': 'fr',
+      'de-DE': 'de',
+      'it-IT': 'it',
+      'pt-BR': 'pt',
+      'ja-JP': 'ja',
+      'ko-KR': 'ko',
+      'zh-CN': 'zh'
+    };
+    return langMap[fullLanguageCode] || 'en';
+  };
   
   // Speech recognition state
   const [showSpeechModal, setShowSpeechModal] = useState(false);
@@ -283,7 +299,7 @@ const VocabularyDisplay = () => {
             elementName={selectedVocabItem.element}
             elementEmoji={selectedVocabItem.emoji}
             groundTruthAudio={selectedVocabItem.audio_b64!}
-            threshold={GAME_CONFIG.SPEECH_RECOGNITION_THRESHOLD}
+            language={getSimpleLanguageCode(selectedLanguage)}
           />
         )}
       </div>
@@ -447,7 +463,7 @@ const VocabularyDisplay = () => {
           elementName={selectedVocabItem.element}
           elementEmoji={selectedVocabItem.emoji}
           groundTruthAudio={selectedVocabItem.audio_b64!}
-          threshold={GAME_CONFIG.SPEECH_RECOGNITION_THRESHOLD}
+          language={getSimpleLanguageCode(selectedLanguage)}
         />
       )}
     </Card>

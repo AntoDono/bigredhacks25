@@ -102,7 +102,7 @@ Example for English: {"element": "Steam", "en_text": "Steam", "emoji": "💨"}`
           "content": `${element1} + ${element2}`
         }
       ],
-      "model": "openai/gpt-oss-20b",
+      "model": "openai/gpt-oss-120b",
       "temperature": 0,
       "max_completion_tokens": 1024,
       "top_p": 1,

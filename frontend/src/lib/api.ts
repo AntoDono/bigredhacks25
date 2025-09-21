@@ -24,6 +24,31 @@ export interface CreateElementResponse {
   element: string;
 }
 
+export interface PronunciationAnalysisRequest {
+  groundTruthAudio: string;
+  userAudio: string;
+  expectedText: string;
+  language?: string; // Language code (e.g., 'en', 'es', 'fr')
+  context?: 'battle' | 'practice'; // Context for different evaluation modes
+}
+
+export interface PronunciationAnalysisResponse {
+  success: boolean;
+  similarity: number;
+  transcription: string;
+  confidence: number;
+  features: {
+    spectral: number;
+    prosodic: number;
+    phonetic: number;
+    overall: number;
+  };
+  is_correct: boolean; // New field indicating if pronunciation is correct
+  context: string; // Context used for evaluation
+  language: string;
+  timestamp: string;
+}
+
 export interface Room {
   name: string;
   description: string;
@@ -133,6 +158,23 @@ export const api = {
     return response.json();
   },
 
+  // Pronunciation analysis
+  async analyzePronunciation(data: PronunciationAnalysisRequest): Promise<PronunciationAnalysisResponse> {
+    const response = await fetch(`${API_BASE_URL}/api/analyze-pronunciation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to analyze pronunciation');
+    }
+
+    return response.json();
+  },
 
   // Get user's learned vocabulary for a language
   async getUserVocabulary(userId: string, languageCode: string, token: string): Promise<{

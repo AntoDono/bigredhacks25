@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 require('./db'); // Connect to database
 const { User, Game, InitialElementsAudio } = require('./schema');
 const { getInitialElements } = require('./languages');
+const { analyzePronunciation } = require('./voice-recognition-client');
 
 const app = express();
 const server = http.createServer(app);
@@ -21,6 +22,7 @@ const io = socketIo(server, {
 
 const PORT = process.env.PORT || 8000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
 
 // Middleware
 app.use(cors({
@@ -36,7 +38,6 @@ var target_elements = [
     'house',
     'sword',
     'cloud',
-    'steam',
     'electricity',
     'plant',
     'metal',
@@ -255,6 +256,68 @@ async function saveToUserVocabulary(userId, elementData, languageCode) {
     
   } catch (error) {
     console.error('Error saving to user vocabulary:', error);
+  }
+}
+
+// Helper function to save completed game to database
+async function saveGameToDatabase(room, roomId) {
+  try {
+    // Calculate game duration
+    const duration = room.endedAt && room.startedAt 
+      ? Math.floor((room.endedAt - room.startedAt) / 1000) 
+      : null;
+
+    // Get winner info
+    const winnerPlayer = Object.values(room.players).find(p => p.userId === room.winner);
+    if (!winnerPlayer) {
+      console.error('Winner not found in room players');
+      return;
+    }
+
+    // Prepare players data
+    const playersData = Object.values(room.players).map(player => ({
+      userId: player.userId,
+      userName: player.name,
+      score: player.score || 0,
+      elementsDiscovered: room.player_stats[player.userId]?.elements?.length || 0
+    }));
+
+    // Create game document
+    const gameData = {
+      players: playersData,
+      winner: {
+        userId: room.winner,
+        userName: winnerPlayer.name
+      },
+      targetElement: room.target_element,
+      roomName: room.roomName || `Room ${roomId}`,
+      language: room.language || 'en-US',
+      startedAt: room.startedAt,
+      endedAt: room.endedAt,
+      duration
+    };
+
+    const game = new Game(gameData);
+    await game.save();
+
+    // Update winner's stats
+    await User.findByIdAndUpdate(room.winner, {
+      $inc: { gamesWon: 1, gamesPlayed: 1 }
+    });
+
+    // Update other players' stats
+    for (const player of Object.values(room.players)) {
+      if (player.userId !== room.winner) {
+        await User.findByIdAndUpdate(player.userId, {
+          $inc: { gamesPlayed: 1 }
+        });
+      }
+    }
+
+    console.log(`🎮 Game saved to database: ${winnerPlayer.name} won in ${duration}s`);
+    
+  } catch (error) {
+    console.error('Error saving game to database:', error);
   }
 }
 
@@ -946,6 +1009,46 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Pronunciation analysis endpoint
+app.post('/api/analyze-pronunciation', async (req, res) => {
+  try {
+    const { groundTruthAudio, userAudio, expectedText, language = 'en', context = 'practice' } = req.body;
+    
+    // Validate required fields
+    if (!groundTruthAudio || !userAudio || !expectedText) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: groundTruthAudio, userAudio, expectedText' 
+      });
+    }
+    
+    console.log(`Analyzing pronunciation for: "${expectedText}" (language: ${language}, context: ${context})`);
+    console.log(`Ground truth audio length: ${groundTruthAudio.length} chars`);
+    console.log(`User audio length: ${userAudio.length} chars`);
+    
+    // Perform pronunciation analysis with language support
+    const result = await analyzePronunciation(groundTruthAudio, userAudio, expectedText, language, context);
+    
+    // Return analysis results
+    res.json({
+      success: true,
+      transcription: result.transcription,
+      confidence: result.confidence,
+      features: result.features,
+      is_correct: result.is_correct,
+      context: result.context,
+      language: language,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Pronunciation analysis error:', error);
+    res.status(500).json({ 
+      error: 'Pronunciation analysis failed',
+      details: error.message
+    });
+  }
+});
+
 // Delete user route (requires authentication)
 app.delete('/api/users/:id', authenticateToken, async (req, res) => {
   try {
@@ -1119,10 +1222,11 @@ app.get('/api/users/:userId/vocabulary/:languageCode', authenticateToken, async 
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Node.js server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Access server at: http://localhost:${PORT}`);
   console.log(`🔌 Socket.IO server ready`);
+  console.log(`🎙️ Voice service should be running on http://localhost:8001`);
 });
 
 module.exports = { app, server, io };
