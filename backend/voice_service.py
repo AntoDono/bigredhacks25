@@ -400,5 +400,5 @@ if __name__ == '__main__':
         print("⚠️ Google Cloud Speech not available - transcription will fail")
         print("Set GOOGLE_APPLICATION_CREDENTIALS environment variable")
     
-    print("🚀 Voice Analysis Service running on http://localhost:8001")
-    app.run(host='localhost', port=8001, debug=False)
+    print("🚀 Voice Analysis Service running on http://localhost:7759")
+    app.run(host='localhost', port=7759, debug=False)

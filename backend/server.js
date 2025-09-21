@@ -20,7 +20,7 @@ const io = socketIo(server, {
   }
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 7758;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 
@@ -1444,7 +1444,7 @@ server.listen(PORT, () => {
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Access server at: http://localhost:${PORT}`);
   console.log(`🔌 Socket.IO server ready`);
-  console.log(`🎙️ Voice service should be running on http://localhost:8001`);
+  console.log(`🎙️ Voice service should be running on http://localhost:7759`);
 });
 
 module.exports = { app, server, io };

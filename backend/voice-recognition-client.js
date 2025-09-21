@@ -7,7 +7,7 @@ const http = require('http');
 
 // Configuration
 const VOICE_SERVICE_HOST = 'localhost';
-const VOICE_SERVICE_PORT = 8001;
+const VOICE_SERVICE_PORT = 7759;
 const VOICE_SERVICE_URL = `http://${VOICE_SERVICE_HOST}:${VOICE_SERVICE_PORT}`;
 
 /**
