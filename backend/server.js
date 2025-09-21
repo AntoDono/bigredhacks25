@@ -98,10 +98,16 @@ rooms = {
         },
         "createdAt": Date,
         "startedAt": Date, // When game started
-        "endedAt": Date    // When game ended
+        "endedAt": Date,   // When game ended
+        "timeoutId": null  // Store timeout ID for cleanup
     }
 }
 */
+
+// Game configuration
+const GAME_CONFIG = {
+  BATTLE_DURATION: 120, // 2 minutes in seconds
+};
 
 // Store connected users
 var connectedUsers = {}; // { socketId: { userId, user, roomId } }
@@ -258,6 +264,141 @@ async function saveToUserVocabulary(userId, elementData, languageCode) {
   }
 }
 
+// Helper function to save completed game to database
+async function saveGameToDatabase(room, roomId) {
+  try {
+    // Calculate game duration
+    const duration = room.startedAt && room.endedAt ? 
+      Math.floor((room.endedAt - room.startedAt) / 1000) : 0;
+
+    // Prepare players array from room data
+    const players = Object.entries(room.player_stats).map(([userId, stats]) => ({
+      userId: userId,
+      userName: room.players[userId]?.name || 'Unknown',
+      score: stats.score || 0,
+      elementsDiscovered: stats.elements?.length || 0
+    }));
+
+    // Find winner info (null if no winner)
+    const winner = room.winner ? {
+      userId: room.winner,
+      userName: room.players[room.winner]?.name || 'Unknown'
+    } : null;
+
+    // Create game document
+    const gameData = {
+      players: players,
+      targetElement: room.target_element,
+      roomName: room.name || `Battle Room ${roomId}`,
+      language: room.language || 'en-US',
+      startedAt: room.startedAt || new Date(),
+      endedAt: room.endedAt || new Date(),
+      duration: duration
+    };
+
+    // Only add winner if there is one
+    if (winner) {
+      gameData.winner = winner;
+    }
+
+    const game = new Game(gameData);
+    const savedGame = await game.save();
+
+    // Update user statistics and add game reference
+    const updatePromises = players.map(async (player) => {
+      try {
+        const user = await User.findById(player.userId);
+        if (user) {
+          user.gamesPlayed = (user.gamesPlayed || 0) + 1;
+          if (room.winner && player.userId === room.winner) {
+            user.gamesWon = (user.gamesWon || 0) + 1;
+          }
+          
+          // Add game reference to user's games array
+          if (!user.games) user.games = [];
+          user.games.push(savedGame._id);
+          
+          await user.save();
+          console.log(`📊 Updated stats for ${player.userName}: ${user.gamesWon}/${user.gamesPlayed} games`);
+        }
+      } catch (error) {
+        console.error(`Error updating user stats for ${player.userId}:`, error);
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    console.log(`💾 Game saved to database: ${savedGame._id} - Winner: ${winner ? winner.userName : 'None'}, Duration: ${duration}s`);
+    return savedGame;
+
+  } catch (error) {
+    console.error('Error saving game to database:', error);
+  }
+}
+
+// Helper function to handle game timeout
+async function handleGameTimeout(roomId) {
+  try {
+    const room = rooms[roomId];
+    if (!room || room.gameStatus === 'ended') return;
+    
+    console.log(`⏰ Game timeout in room ${roomId}`);
+    
+    // End the game due to timeout
+    room.gameStatus = 'ended';
+    room.endedAt = new Date();
+    
+    // Find the player with the highest score as winner, or null if tie/no scores
+    let winner = null;
+    let highestScore = -1;
+    let tiedPlayers = [];
+    
+    Object.entries(room.player_stats).forEach(([userId, stats]) => {
+      if (stats.score > highestScore) {
+        highestScore = stats.score;
+        winner = userId;
+        tiedPlayers = [userId];
+      } else if (stats.score === highestScore) {
+        tiedPlayers.push(userId);
+      }
+    });
+    
+    // If there's a tie or no one scored, pick the first player or null
+    if (tiedPlayers.length > 1 && highestScore === 0) {
+      winner = null; // No winner if everyone has 0 points
+    } else if (tiedPlayers.length > 1) {
+      winner = tiedPlayers[0]; // Pick first player in case of tie
+    }
+    
+    room.winner = winner;
+    
+    // Save game to database
+    await saveGameToDatabase(room, roomId);
+    
+    // Broadcast timeout to all players in room
+    const timeoutData = {
+      type: 'game-timeout',
+      data: {
+        message: 'Time\'s up! Game ended due to time limit.',
+        winner: winner ? {
+          userId: winner,
+          userName: room.players[winner]?.name || 'Unknown'
+        } : null,
+        targetElement: room.target_element,
+        finalScores: room.player_stats,
+        gameEndTime: room.endedAt
+      }
+    };
+    
+    io.to(roomId).emit('message_broadcast', timeoutData);
+    
+    console.log(`⏰ Game timeout handled for room ${roomId}. Winner: ${winner ? room.players[winner]?.name : 'None'}`);
+    
+  } catch (error) {
+    console.error('Error handling game timeout:', error);
+  }
+}
+
 const checkForGameEnd = async(socket, roomId, createdElementData) => {
   const room = rooms[roomId];
   if (!room || room.gameStatus === 'ended') return false;
@@ -269,6 +410,12 @@ const checkForGameEnd = async(socket, roomId, createdElementData) => {
     room.gameStatus = 'ended';
     room.winner = socket.userId;
     room.endedAt = new Date();
+    
+    // Clear the timeout since game ended early
+    if (room.timeoutId) {
+      clearTimeout(room.timeoutId);
+      room.timeoutId = null;
+    }
     
     // Save game to database
     await saveGameToDatabase(room, roomId);
@@ -363,6 +510,11 @@ const handleStartGame = (socket, data) => {
     room.gameStatus = 'active';
     room.startedAt = new Date();
     
+    // Set up game timeout
+    room.timeoutId = setTimeout(async () => {
+      await handleGameTimeout(roomId);
+    }, GAME_CONFIG.BATTLE_DURATION * 1000); // Convert seconds to milliseconds
+    
     // Broadcast game start to all players in room
     io.to(roomId).emit('message_broadcast', {
       type: 'game-started',
@@ -374,7 +526,7 @@ const handleStartGame = (socket, data) => {
       }
     });
     
-    console.log(`🎮 Game started in room ${roomId} by ${socket.user.name}`);
+    console.log(`🎮 Game started in room ${roomId} by ${socket.user.name}. Timeout set for ${GAME_CONFIG.BATTLE_DURATION} seconds.`);
     
   } catch (error) {
     console.error('Error starting game:', error);
@@ -1113,6 +1265,134 @@ app.get('/api/users/:userId/vocabulary/:languageCode', authenticateToken, async 
 
   } catch (error) {
     console.error('Error fetching user vocabulary:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get user's game history
+app.get('/api/users/:userId/games', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Verify user is accessing their own games or is admin
+    if (req.user.userId !== userId) {
+      return res.status(403).json({ error: 'Unauthorized to access this user\'s games' });
+    }
+
+    // Find games where the user participated
+    const games = await Game.find({
+      'players.userId': userId
+    })
+    .sort({ createdAt: -1 }) // Most recent first
+    .skip(skip)
+    .limit(limit)
+    .populate('players.userId', 'name')
+    .populate('winner.userId', 'name');
+
+    // Get total count for pagination
+    const totalGames = await Game.countDocuments({
+      'players.userId': userId
+    });
+
+    // Format the response
+    const formattedGames = games.map(game => ({
+      id: game._id,
+      targetElement: game.targetElement,
+      roomName: game.roomName,
+      language: game.language,
+      startedAt: game.startedAt,
+      endedAt: game.endedAt,
+      duration: game.duration,
+      createdAt: game.createdAt,
+      winner: game.winner ? {
+        userId: game.winner.userId,
+        userName: game.winner.userName
+      } : null,
+      players: game.players.map(player => ({
+        userId: player.userId,
+        userName: player.userName,
+        score: player.score,
+        elementsDiscovered: player.elementsDiscovered
+      })),
+      // Add user-specific information
+      userWon: game.winner ? game.winner.userId.toString() === userId : false,
+      userStats: game.players.find(p => p.userId._id ? p.userId._id.toString() === userId : p.userId.toString() === userId)
+    }));
+
+    res.json({
+      games: formattedGames,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalGames / limit),
+        totalGames: totalGames,
+        hasNextPage: page * limit < totalGames,
+        hasPrevPage: page > 1
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching user games:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get specific game details
+app.get('/api/games/:gameId', authenticateToken, async (req, res) => {
+  try {
+    const gameId = req.params.gameId;
+    const userId = req.user.userId;
+
+    const game = await Game.findById(gameId)
+      .populate('players.userId', 'name')
+      .populate('winner.userId', 'name');
+
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+
+    // Check if user participated in this game
+    const userParticipated = game.players.some(player => 
+      player.userId._id.toString() === userId
+    );
+    console.log(JSON.stringify(game.players[0]));
+    console.log( userId);
+    console.log(userParticipated);
+    if (!userParticipated) {
+      return res.status(403).json({ error: 'Unauthorized to view this game' });
+    }
+
+    // Format detailed game response
+    const formattedGame = {
+      id: game._id,
+      targetElement: game.targetElement,
+      roomName: game.roomName,
+      language: game.language,
+      startedAt: game.startedAt,
+      endedAt: game.endedAt,
+      duration: game.duration,
+      createdAt: game.createdAt,
+      winner: game.winner ? {
+        userId: game.winner.userId,
+        userName: game.winner.userName
+      } : null,
+      players: game.players.map(player => ({
+        userId: player.userId,
+        userName: player.userName,
+        score: player.score,
+        elementsDiscovered: player.elementsDiscovered
+      })),
+      // Add user-specific information
+      userWon: game.winner ? game.winner.userId.toString() === userId : false,
+      userStats: game.players.find(p => p.userId._id ? p.userId._id.toString() === userId : p.userId.toString() === userId)
+    };
+
+    res.json(formattedGame);
+
+  } catch (error) {
+    console.error('Error fetching game details:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

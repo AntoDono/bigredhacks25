@@ -44,6 +44,39 @@ export interface Room {
   endedAt?: string;
 }
 
+export interface GameHistoryItem {
+  id: string;
+  targetElement: string;
+  roomName: string;
+  language: string;
+  startedAt: string;
+  endedAt: string;
+  duration: number;
+  createdAt: string;
+  winner: {
+    userId: string;
+    userName: string;
+  } | null;
+  players: {
+    userId: string;
+    userName: string;
+    score: number;
+    elementsDiscovered: number;
+  }[];
+  userWon: boolean;
+  userStats?: {
+    userId: string;
+    userName: string;
+    score: number;
+    elementsDiscovered: number;
+  };
+}
+
+export interface GameDetails extends GameHistoryItem {
+  // GameDetails has the same structure as GameHistoryItem for now
+  // Could be extended with additional details in the future
+}
+
 // API Functions
 export const api = {
   // Authentication
@@ -150,6 +183,48 @@ export const api = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to fetch vocabulary');
+    }
+
+    return response.json();
+  },
+
+  // Game History
+  async getUserGames(userId: string, token: string, page = 1, limit = 10): Promise<{
+    games: GameHistoryItem[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalGames: number;
+      hasNextPage: boolean;
+      hasPrevPage: boolean;
+    };
+  }> {
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/games?page=${page}&limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch games');
+    }
+
+    return response.json();
+  },
+
+  async getGameDetails(gameId: string, token: string): Promise<GameDetails> {
+    const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch game details');
     }
 
     return response.json();

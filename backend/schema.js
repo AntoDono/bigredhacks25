@@ -9,8 +9,8 @@ const gameSchema = new mongoose.Schema({
     elementsDiscovered: { type: Number, default: 0 }
   }],
   winner: { 
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    userName: { type: String, required: true }
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    userName: { type: String }
   },
   targetElement: { type: String, required: true },
   roomName: { type: String, required: true },
