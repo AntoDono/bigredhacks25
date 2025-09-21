@@ -682,8 +682,10 @@ const handleCreateElement = async (socket, data) => {
       broadcastElementDiscovery(socket, roomId, newElement, combination);
     }
     
-    // THEN check for game end condition (after element is sent)
-    if (roomId) {
+    // Don't check for game end here - wait for pronunciation verification
+    // Game end check will happen after successful pronunciation in /api/analyze-pronunciation
+    if (roomId && !audioB64) {
+      // Only check for game end if there's no audio (no pronunciation required)
       gameEnded = await checkForGameEnd(socket, roomId, result);
     }
     
@@ -1110,9 +1112,9 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Pronunciation analysis endpoint
-app.post('/api/analyze-pronunciation', async (req, res) => {
+app.post('/api/analyze-pronunciation', authenticateToken, async (req, res) => {
   try {
-    const { groundTruthAudio, userAudio, expectedText, language = 'en', context = 'practice' } = req.body;
+    const { groundTruthAudio, userAudio, expectedText, language = 'en', context = 'practice', roomId } = req.body;
     
     // Validate required fields
     if (!groundTruthAudio || !userAudio || !expectedText) {
@@ -1127,6 +1129,30 @@ app.post('/api/analyze-pronunciation', async (req, res) => {
     
     // Perform pronunciation analysis with language support
     const result = await analyzePronunciation(groundTruthAudio, userAudio, expectedText, language, context);
+    
+    // If pronunciation is correct and this is a battle context with a room, check for game end
+    if (result.is_correct && context === 'battle' && roomId) {
+      console.log(`🎯 Pronunciation correct for "${expectedText}" in battle mode, checking for game end...`);
+      
+      // Find the user's socket to trigger game end check
+      const userSocket = Object.values(connectedUsers).find(user => user.userId === req.user.id);
+      if (userSocket) {
+        const socketId = Object.keys(connectedUsers).find(key => connectedUsers[key].userId === req.user.id);
+        const socket = io.sockets.sockets.get(socketId);
+        
+        if (socket) {
+          // Create element data for game end check
+          const elementData = {
+            element: expectedText,
+            en_text: expectedText
+          };
+          
+          // Check for game end after successful pronunciation
+          const gameEnded = await checkForGameEnd(socket, roomId, elementData);
+          console.log(`🎯 Game end check result: ${gameEnded}`);
+        }
+      }
+    }
     
     // Return analysis results
     res.json({

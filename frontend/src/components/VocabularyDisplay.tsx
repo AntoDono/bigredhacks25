@@ -300,6 +300,7 @@ const VocabularyDisplay = () => {
             elementEmoji={selectedVocabItem.emoji}
             groundTruthAudio={selectedVocabItem.audio_b64!}
             language={getSimpleLanguageCode(selectedLanguage)}
+            token={token}
           />
         )}
       </div>
@@ -464,6 +465,7 @@ const VocabularyDisplay = () => {
           elementEmoji={selectedVocabItem.emoji}
           groundTruthAudio={selectedVocabItem.audio_b64!}
           language={getSimpleLanguageCode(selectedLanguage)}
+          token={token}
         />
       )}
     </Card>
