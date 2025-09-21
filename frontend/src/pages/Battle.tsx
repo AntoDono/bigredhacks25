@@ -901,6 +901,8 @@ const Battle = () => {
           phonetics={speechModalData.phonetics}
           language={getSimpleLanguageCode(gameLanguage)}
           context="battle"
+          token={token}
+          roomId={roomCode}
         />
       )}
 

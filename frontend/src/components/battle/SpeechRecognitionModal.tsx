@@ -40,6 +40,8 @@ interface SpeechRecognitionModalProps {
   phonetics?: string; // English pronunciation guide
   language?: string; // language code (e.g., 'en', 'es', 'fr')
   context?: 'battle' | 'practice'; // context to determine auto-start behavior
+  token?: string; // Auth token for API calls
+  roomId?: string; // Room ID for battle context
 }
 
 const SpeechRecognitionModal = ({
@@ -51,7 +53,9 @@ const SpeechRecognitionModal = ({
   groundTruthAudio,
   phonetics,
   language = 'en',
-  context = 'practice'
+  context = 'practice',
+  token,
+  roomId
 }: SpeechRecognitionModalProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudio, setRecordedAudio] = useState<string | null>(null);
@@ -190,8 +194,9 @@ const SpeechRecognitionModal = ({
         userAudio: recAudio,
         expectedText: elementName,
         language: language,
-        context: context
-      });
+        context: context,
+        roomId: roomId
+      }, token);
 
       console.log('Backend analysis result:', result);
       console.log('Context:', context);

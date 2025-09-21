@@ -30,6 +30,7 @@ export interface PronunciationAnalysisRequest {
   expectedText: string;
   language?: string; // Language code (e.g., 'en', 'es', 'fr')
   context?: 'battle' | 'practice'; // Context for different evaluation modes
+  roomId?: string; // Room ID for battle context
 }
 
 export interface PronunciationAnalysisResponse {
@@ -192,12 +193,18 @@ export const api = {
   },
 
   // Pronunciation analysis
-  async analyzePronunciation(data: PronunciationAnalysisRequest): Promise<PronunciationAnalysisResponse> {
+  async analyzePronunciation(data: PronunciationAnalysisRequest, token?: string): Promise<PronunciationAnalysisResponse> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/analyze-pronunciation`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
