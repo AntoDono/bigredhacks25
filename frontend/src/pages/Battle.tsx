@@ -323,6 +323,27 @@ const Battle = () => {
           );
           break;
           
+        case 'game-timeout':
+          setGameEnded(true);
+          setIsActive(false);
+          
+          const timeoutWinner = data.data.winner?.userId === user?.id;
+          setPlayerWon(timeoutWinner);
+          
+          displayGameOverlay(
+            'timeup',
+            {
+              title: '⏰ Time\'s Up!',
+              message: data.data.winner 
+                ? `${data.data.winner.userName} won with the highest score!`
+                : 'The battle ended in a draw!',
+              targetElement: data.data.targetElement,
+              winnerName: data.data.winner?.userName,
+              isPlayerWinner: timeoutWinner
+            }
+          );
+          break;
+          
         case 'game-started':
           toast.success(data.data.message);
           break;

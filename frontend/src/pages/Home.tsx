@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { RoomCodeInput } from "@/components/ui/room-code-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
@@ -9,8 +10,9 @@ import { Plus, Users, Eye, Copy, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocket } from "@/hooks/useSocket";
-import Profile from "@/components/Profile";
+import ProfileButton from "@/components/ProfileButton";
 import VocabularyDisplay from "@/components/VocabularyDisplay";
+import GameHistory from "@/components/GameHistory";
 import logo from "../assets/logo.png";
 
 const Home = () => {
@@ -63,8 +65,8 @@ const Home = () => {
       return;
     }
     
+    // Generate 6-character alphanumeric code without hyphen
     const code = Math.random().toString(36).substring(2, 5).toUpperCase() + 
-                 "-" + 
                  Math.random().toString(36).substring(2, 5).toUpperCase();
     setGeneratedCode(code);
     setIsCreatingRoom(true);
@@ -79,8 +81,8 @@ const Home = () => {
   };
 
   const joinRoom = async () => {
-    if (roomCode.length < 7) {
-      toast.error("Please enter a valid room code (XXX-XXX)");
+    if (roomCode.length < 6) {
+      toast.error("Please enter a valid room code (6 characters)");
       return;
     }
 
@@ -109,8 +111,8 @@ const Home = () => {
   };
 
   const spectateRoom = async () => {
-    if (roomCode.length < 7) {
-      toast.error("Please enter a valid room code (XXX-XXX)");
+    if (roomCode.length < 6) {
+      toast.error("Please enter a valid room code (6 characters)");
       return;
     }
 
@@ -133,8 +135,15 @@ const Home = () => {
     }
   };
 
+  const formatCodeDisplay = (code: string) => {
+    if (code.length <= 3) {
+      return code;
+    }
+    return code.slice(0, 3) + '-' + code.slice(3, 6);
+  };
+
   const copyRoomCode = () => {
-    navigator.clipboard.writeText(generatedCode);
+    navigator.clipboard.writeText(generatedCode); // Copy raw 6-character code
     toast.success("Room code copied to clipboard!");
   };
 
@@ -177,51 +186,23 @@ const Home = () => {
             <p className="text-gray-600 text-lg">Ready for your next language battle?</p>
           </div>
           
-          <Button
-            variant="outline"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
-            onClick={logout}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={logout}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+            <ProfileButton />
+          </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
           {/* Main Actions Grid */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Game Info */}
-            <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="p-8">
-                <div className="text-center">
-                  <h3 className="text-2xl font-bold mb-6 text-gray-900">How to Play Duelingo</h3>
-                  <div className="grid md:grid-cols-3 gap-6">
-                    <div>
-                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <span className="text-xl">🎯</span>
-                      </div>
-                      <h4 className="font-semibold mb-2 text-gray-900">Battle Objective</h4>
-                      <p className="text-gray-600 text-sm">Race to create the target word using drag-and-drop combinations</p>
-                    </div>
-                    <div>
-                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <span className="text-xl">⏱️</span>
-                      </div>
-                      <h4 className="font-semibold mb-2 text-gray-900">60 Second Timer</h4>
-                      <p className="text-gray-600 text-sm">Quick battles test your vocabulary skills under pressure</p>
-                    </div>
-                    <div>
-                      <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <span className="text-xl">📖</span>
-                      </div>
-                      <h4 className="font-semibold mb-2 text-gray-900">Learning Stories</h4>
-                      <p className="text-gray-600 text-sm">Your creations become part of an adventure story</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+            
             {/* Create Room */}
             <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
@@ -266,8 +247,8 @@ const Home = () => {
                     <div className="text-center">
                       <Label className="text-sm font-medium text-gray-700 mb-2 block">Your Room Code</Label>
                       <div className="flex items-center gap-2">
-                        <div className="room-code-input bg-gray-50 border border-gray-300 rounded-lg p-4 flex-1 text-gray-900 font-mono text-xl">
-                          {generatedCode}
+                        <div className="room-code-input bg-gray-50 border border-gray-300 rounded-lg p-4 flex-1 text-gray-900 font-mono text-xl text-center">
+                          {formatCodeDisplay(generatedCode)}
                         </div>
                         <Button
                           variant="outline"
@@ -325,13 +306,11 @@ const Home = () => {
                   <Label htmlFor="roomCode" className="text-sm font-medium text-gray-700 mb-2 block">
                     Room Code
                   </Label>
-                  <Input
+                  <RoomCodeInput
                     id="roomCode"
-                    placeholder="XXX-XXX"
                     value={roomCode}
-                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                    className="room-code-input border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
-                    maxLength={7}
+                    onChange={setRoomCode}
+                    className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 
@@ -339,7 +318,7 @@ const Home = () => {
                   <Button 
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={joinRoom}
-                    disabled={roomCode.length < 7 || isCheckingRoom}
+                    disabled={roomCode.length < 6 || isCheckingRoom}
                   >
                     <Users className="w-4 h-4 mr-2" />
                     {isCheckingRoom ? "Checking..." : "Join"}
@@ -347,7 +326,7 @@ const Home = () => {
                   <Button 
                     variant="outline"
                     onClick={spectateRoom}
-                    disabled={roomCode.length < 7 || isCheckingRoom}
+                    disabled={roomCode.length < 6 || isCheckingRoom}
                     className="border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     <Eye className="w-4 h-4 mr-2" />
@@ -356,16 +335,50 @@ const Home = () => {
                 </div>
               </CardContent>
             </Card>
+            {/* Game Info */}
+            <Card className="bg-white border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold mb-6 text-gray-900">How to Play Duelingo</h3>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div>
+                      <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <span className="text-xl">🎯</span>
+                      </div>
+                      <h4 className="font-semibold mb-2 text-gray-900">Battle Objective</h4>
+                      <p className="text-gray-600 text-sm">Race to create the target word using drag-and-drop combinations</p>
+                    </div>
+                    <div>
+                      <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <span className="text-xl">⏱️</span>
+                      </div>
+                      <h4 className="font-semibold mb-2 text-gray-900">60 Second Timer</h4>
+                      <p className="text-gray-600 text-sm">Quick battles test your vocabulary skills under pressure</p>
+                    </div>
+                    <div>
+                      <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <span className="text-xl">📖</span>
+                      </div>
+                      <h4 className="font-semibold mb-2 text-gray-900">Learning Stories</h4>
+                      <p className="text-gray-600 text-sm">Your creations become part of an adventure story</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
           </div>
 
-          {/* Profile Sidebar */}
+          {/* Vocabulary Sidebar */}
           <div className="lg:col-span-1">
-            <div className="sticky top-4 space-y-6">
-              <Profile />
+            <div className="sticky top-4">
               <VocabularyDisplay />
             </div>
           </div>
         </div>
+
+        {/* Game History Section - Full Width */}
+        <GameHistory />
       </div>
     </div>
   );
