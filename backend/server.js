@@ -108,7 +108,7 @@ rooms = {
 
 // Game configuration
 const GAME_CONFIG = {
-  BATTLE_DURATION: 120, // 2 minutes in seconds
+  BATTLE_DURATION: 180, // 3 minutes in seconds
 };
 
 // Store connected users
@@ -245,6 +245,7 @@ async function saveToUserVocabulary(userId, elementData, languageCode) {
       element: elementData.element, // Translated element name
       en_text: elementData.en_text || elementData.element, // English reference
       emoji: elementData.emoji || '✨',
+      phonetics: elementData.phonetics || elementData.element.toLowerCase().replace(/[^a-z]/g, '-'), // English pronunciation guide
       audio_b64: elementData.audio_b64 || null,
       learnedAt: new Date()
     };
